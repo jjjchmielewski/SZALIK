@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "585919277519",
+    "firebase_url": "https://szalik-pk-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "szalik-pk",
+    "storage_bucket": "szalik-pk.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:585919277519:android:d9d4af6ca4511430154aba",
+        "android_client_info": {
+          "package_name": "com.szalik"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "585919277519-fj0goskv2j8nihovom50jftn6b1vjqku.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmTi-SIix9pw3Suv0Iu6x8itTL-zgAPmc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "585919277519-fj0goskv2j8nihovom50jftn6b1vjqku.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

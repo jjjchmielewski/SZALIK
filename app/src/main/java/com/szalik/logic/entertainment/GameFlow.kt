@@ -13,13 +13,16 @@ import com.szalik.logic.entertainment.enums.Role
 
 class GameFlow {
     companion object {
+        var testMode: Boolean = false
+        var isHost: Boolean = false
+        var isNight: Boolean by mutableStateOf(true)
         val listOfPlayers = mutableStateListOf<Player>()
         val awakenPlayersIds = mutableStateListOf<String>()
         var thisPlayerId: String? = null
         var status by mutableStateOf("")
         var playerInGame = false
         var currentPlayerId by mutableStateOf("")
-        var showActionQuestion by mutableStateOf(true)
+        var showActionQuestion by mutableStateOf(false)
         var showChoiceList by mutableStateOf(false)
         var showIdentity by mutableStateOf(false)
         var showTotemLocation by mutableStateOf(false)
@@ -31,25 +34,36 @@ class GameFlow {
         var playerWithTotemId = ""
         var indiansKillCounter = 9
         var lastProtectedPlayerId = ""
+        var indiansTotemTakeover = false
         private val rolesQueue = mutableListOf<Role>()
         private var lobbyId: String? = null
         private var dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
 
 
-        fun prepareGame() {
+        fun prepareGameByHost() {
             giveCards(listOfPlayers.size)
             dbRef.child(lobbyId!!).child("currentPlayer").setValue("")
             dbRef.child(lobbyId!!).child("chosenPlayer").setValue("")
             dbRef.child(lobbyId!!).child("state").setValue("STARTED")
+            checkCurrentPlayer()
             checkChosenPlayer()
+            nightZero()
             for (player in listOfPlayers) {
                 Log.i("GAME_FLOW", player.card?.role?.polishName!!)
             }
         }
 
-        fun startGame() {
-            nightZero()
+        fun prepareGameByGuest() {
             checkCurrentPlayer()
+            checkChosenPlayer()
+            nightZero()
+        }
+
+        fun startGame() {
+            Log.i("GAME_FLOW", "Starting game")
+            if (isHost)
+                dbRef.child(lobbyId!!).child("state").setValue("IN_PROGRESS")
+            handleNextPlayer()
         }
 
         fun setLobbyId(lobbyId: String): Boolean {
@@ -97,6 +111,7 @@ class GameFlow {
 
         private fun day() {
             indiansKillCounter = 0
+            indiansTotemTakeover = false
             sharedIdentity = null
             listOfPlayers.forEach {
                 if (it.card!!.isJailed)
@@ -113,22 +128,35 @@ class GameFlow {
                 //if hasTotem
             }
 
-            night()
+            //night()
         }
 
 
         private fun handleNextPlayer() {
-
-            rolesQueue.removeFirst()
+            Log.i("GAME_FLOW", "Role queue:")
+            rolesQueue.forEach {
+                Log.i("ROLES_QUEUE", it.name)
+            }
             if (rolesQueue.isNotEmpty()) {
                 val nextPlayer =
                     listOfPlayers.find { it.card?.role == rolesQueue.first() && it.card?.isJailed == false && it.card?.isDrunk == false && it.card?.isPlaying == false }
                 if (nextPlayer != null) {
+                    if (nextPlayer.card?.role == Role.LONELY_COYOTE && listOfPlayers.filter { it.card?.role?.fraction == Fraction.INDIANS }.size > 1) {
+                        rolesQueue.removeFirst()
+                        handleNextPlayer()
+                    }
+
+                    if (nextPlayer.card?.role == Role.BURNING_RAGE && !indiansTotemTakeover) {
+                        rolesQueue.removeFirst()
+                        handleNextPlayer()
+                    }
+
                     when (nextPlayer.card?.actionsLeftCounter) {
                         999 -> {
                             showChoiceList = true
                         }
                         0 -> {
+                            rolesQueue.removeFirst()
                             handleNextPlayer()
                         }
                         else -> {
@@ -166,20 +194,23 @@ class GameFlow {
 
                         else -> awakenPlayersIds.add(nextPlayer.id)
                     }
-
+                    rolesQueue.removeFirst()
                     dbRef.child(lobbyId!!).child("currentPlayer").setValue(nextPlayer.id)
                 } else {
+                    rolesQueue.removeFirst()
                     handleNextPlayer()
                 }
             } else {
                 dayNumber++
+                Log.i("GAME_FLOW", "Morning no. $dayNumber")
                 day()
             }
         }
 
         private fun handleChoice() {
+            Log.i("GAME_FLOW", "Handling choice for chosen: ${listOfPlayers.find { it.id == chosenPlayerId }?.name}")
             var voiceMessage = ""
-            when (rolesQueue.first()) {
+            when (listOfPlayers.find { it.id == currentPlayerId }?.card?.role) {
                 Role.COQUETTE -> {
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                     awakenPlayersIds.add(chosenPlayerId)
@@ -237,7 +268,7 @@ class GameFlow {
                     } else if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction != Fraction.INDIANS && indiansKillCounter == 0) {
                         indiansKillCounter = 1
                         eliminate(Role.CHIEF, chosenPlayerId)
-                    } else if(listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.INDIANS && indiansKillCounter == 1) {
+                    } else if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.INDIANS && indiansKillCounter == 1) {
                         eliminate(Role.CHIEF, chosenPlayerId)
                         indiansKillCounter--
                     } else {
@@ -302,6 +333,8 @@ class GameFlow {
             listOfPlayers.find { it.card?.role == role }?.card?.hasTotem = true
             listOfPlayers.find { it.id == playerWithTotemId }?.card?.hasTotem = false
             playerWithTotemId = listOfPlayers.find { it.card?.role == role }?.id!!
+            if (listOfPlayers.find { it.card?.role == role }?.card?.role?.fraction == Fraction.INDIANS)
+                indiansTotemTakeover = true
         }
 
         private fun passTotemTo(id: String) {
@@ -309,6 +342,8 @@ class GameFlow {
             listOfPlayers.find { it.id == id }?.card?.hasTotem = true
             listOfPlayers.find { it.id == playerWithTotemId }?.card?.hasTotem = false
             playerWithTotemId = id
+            if (listOfPlayers.find { it.id == id }?.card?.role?.fraction == Fraction.INDIANS)
+                indiansTotemTakeover = true
         }
 
         private fun giveCards(numberOfPlayers: Int) {
@@ -316,31 +351,46 @@ class GameFlow {
             val allRoles = Role.values().toMutableList()
             val rolesToGive = mutableListOf<Role>()
 
-            for (i in distribution.city downTo 1) {
-                val role = allRoles.filter { it.fraction == Fraction.CITY }.random()
-                allRoles.remove(role)
-                rolesToGive.add(role)
-            }
-            for (i in distribution.bandits downTo 1) {
-                val role = allRoles.filter { it.fraction == Fraction.BANDITS }.random()
-                allRoles.remove(role)
-                rolesToGive.add(role)
-            }
-            for (i in distribution.indians downTo 1) {
-                val role = allRoles.filter { it.fraction == Fraction.INDIANS }.random()
-                allRoles.remove(role)
-                rolesToGive.add(role)
-            }
-            for (i in distribution.aliens downTo 1) {
-                val role = allRoles.filter { it.fraction == Fraction.ALIENS }.random()
-                allRoles.remove(role)
-                rolesToGive.add(role)
+            if (testMode) {
+                rolesToGive.add(Role.COQUETTE)
+                rolesToGive.add(Role.SEDUCER)
+                rolesToGive.add(Role.SHERIFF)
+                rolesToGive.add(Role.PRIEST)
+                rolesToGive.add(Role.WARLORD)
+                rolesToGive.add(Role.BLACKMAILER)
+            } else {
+                for (i in distribution.city downTo 1) {
+                    val role = allRoles.filter { it.fraction == Fraction.CITY }.random()
+                    allRoles.remove(role)
+                    rolesToGive.add(role)
+                }
+                for (i in distribution.bandits downTo 1) {
+                    val role = allRoles.filter { it.fraction == Fraction.BANDITS }.random()
+                    allRoles.remove(role)
+                    rolesToGive.add(role)
+                }
+                for (i in distribution.indians downTo 1) {
+                    val role = allRoles.filter { it.fraction == Fraction.INDIANS }.random()
+                    allRoles.remove(role)
+                    rolesToGive.add(role)
+                }
+                for (i in distribution.aliens downTo 1) {
+                    val role = allRoles.filter { it.fraction == Fraction.ALIENS }.random()
+                    allRoles.remove(role)
+                    rolesToGive.add(role)
+                }
             }
 
+
             for (gamer in listOfPlayers) {
-                val role = rolesToGive.random()
-                gamer.card = GameCard(role)
-                rolesToGive.remove(role)
+                if (testMode) {
+                    gamer.card = GameCard(rolesToGive.first())
+                    rolesToGive.removeFirst()
+                } else {
+                    val role = rolesToGive.random()
+                    gamer.card = GameCard(role)
+                    rolesToGive.remove(role)
+                }
                 dbRef.child(lobbyId!!).child("players").child(gamer.id).setValue(gamer)
             }
         }
@@ -396,7 +446,7 @@ class GameFlow {
             dbRef.child(lobbyId!!).child("currentPlayer")
                 .addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        Log.i("GAME_FLOW", "Current player is ${snapshot.value}!")
+                        Log.i("GAME_FLOW", "Current player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!")
                         if (snapshot.value != "") {
                             currentPlayerId = snapshot.value as String
                         } else if (snapshot.value == "" && status == "IN_PROGRESS") {
@@ -416,7 +466,7 @@ class GameFlow {
             dbRef.child(lobbyId!!).child("chosenPlayer")
                 .addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        Log.i("GAME_FLOW", "Chosen player is ${snapshot.value}!")
+                        Log.i("GAME_FLOW", "Chosen player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!")
                         chosenPlayerId = snapshot.value as String
                         if (chosenPlayerId != "")
                             handleChoice()

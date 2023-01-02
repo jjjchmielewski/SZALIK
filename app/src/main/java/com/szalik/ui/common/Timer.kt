@@ -40,7 +40,6 @@ fun Timer(totalTime: Long, mode: MeetingMode) {
                 color = Color(0xFF9C0206)
             )
         } else {
-            dbRef.child("state").setValue("IN_PROGRESS")
             GameFlow.startGame()
         }
     }

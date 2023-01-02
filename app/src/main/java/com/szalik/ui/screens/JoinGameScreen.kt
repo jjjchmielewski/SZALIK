@@ -1,5 +1,6 @@
 package com.szalik.ui.screens
 
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -61,6 +62,9 @@ fun JoinGameScreen(navController: NavController) {
         }
     })
 
+    if (GameFlow.testMode) {
+        gameId = "123456"
+    }
 
     SzalikTheme {
         Surface(

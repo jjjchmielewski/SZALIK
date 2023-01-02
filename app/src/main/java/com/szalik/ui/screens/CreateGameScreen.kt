@@ -21,23 +21,42 @@ import com.szalik.logic.entertainment.Player
 import com.szalik.ui.theme.SzalikTheme
 import kotlin.random.Random
 
+val dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
+var exists by mutableStateOf<Boolean?>(null)
+
 @Composable
 fun CreateGameScreen(navController: NavController) {
-    var exists: Boolean? = null
-    val dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
-    var lobbyId by remember { mutableStateOf(getNewLobbyId())}
+    var lobbyId by remember {
+        mutableStateOf(getNewLobbyId())
+    }
+    var clicked by remember {
+        mutableStateOf(false)
+    }
+    var transferred by remember {
+        mutableStateOf(false)
+    }
 
-    dbRef.addListenerForSingleValueEvent(object :
-        ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            Log.v("CREATE_GAME_SCREEN", "Check if game $lobbyId exists")
-            exists = snapshot.hasChild(lobbyId)
+    if (clicked) {
+        if (exists == false && !transferred) {
+            val playerId = dbRef.push().key
+            val player = Player(name = "Jasio", id = playerId!!)
+            GameFlow.thisPlayerId = player.id
+            GameFlow.setLobbyId(lobbyId)
+
+            dbRef.child(lobbyId).child("state").setValue("WAIT")
+            dbRef.child(lobbyId).child("players").child(playerId).setValue(player)
+            GameFlow.isHost = true
+            transferred = true
+            navController.navigate(Screen.LobbyScreen.withArgs(lobbyId, UserMode.HOST.name))
+        } else if (exists == true){
+            lobbyId = getNewLobbyId()
+            checkIfLobbyExists(lobbyId)
+            exists = null
+        } else {
+            exists = null
         }
+    }
 
-        override fun onCancelled(error: DatabaseError) {
-
-        }
-    })
 
     SzalikTheme {
         Surface(
@@ -47,33 +66,20 @@ fun CreateGameScreen(navController: NavController) {
             Column(Modifier.fillMaxSize(), Arrangement.Center) {
                 Button(
                     onClick = {
-                        loop@while(true) {
-                            when (exists) {
-                                null -> {
-                                    continue@loop
-                                }
-                                true -> {
-                                    lobbyId = getNewLobbyId()
-                                }
-                                false -> {
-                                    break@loop
-                                }
-                            }
+                        if (GameFlow.testMode) {
+                            val playerId = dbRef.push().key
+                            val player = Player(name = "Jasio", id = playerId!!)
+                            GameFlow.thisPlayerId = player.id
+                            dbRef.child("123456").setValue(null)
+                            GameFlow.setLobbyId("123456")
+                            dbRef.child("123456").child("state").setValue("WAIT")
+                            dbRef.child("123456").child("players").child(playerId).setValue(player)
+                            GameFlow.isHost = true
+                            navController.navigate(Screen.LobbyScreen.withArgs("123456", UserMode.HOST.name))
+                        } else {
+                            checkIfLobbyExists(lobbyId)
+                            clicked = true
                         }
-
-                        val playerId = dbRef.push().key
-                        val player = Player(name = "Jasio", id = playerId!!)
-                        GameFlow.thisPlayerId = player.id
-                        GameFlow.setLobbyId(lobbyId)
-
-                        dbRef.child(lobbyId).child("state").setValue("WAIT")
-                        dbRef.child(lobbyId).child("players").child(playerId).setValue(player)
-                        for(i in 5 downTo 1) {
-                            val dummyId = dbRef.push().key
-                            val dummy = Player("dummy$i", dummyId!!)
-                            dbRef.child(lobbyId).child("players").child(dummyId).setValue(dummy)
-                        }
-                        navController.navigate(Screen.LobbyScreen.withArgs(lobbyId, UserMode.HOST.name))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -88,5 +94,20 @@ fun CreateGameScreen(navController: NavController) {
 }
 
 private fun getNewLobbyId(): String {
-    return Random.nextInt(100000, 999999).toString()
+    val random = Random.nextInt(100000, 999999).toString()
+    return random
+}
+
+private fun checkIfLobbyExists(id: String) {
+    dbRef.addListenerForSingleValueEvent(object :
+        ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            Log.v("CREATE_GAME_SCREEN", "Check if game $id exists")
+            exists = snapshot.hasChild(id)
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+
+        }
+    })
 }

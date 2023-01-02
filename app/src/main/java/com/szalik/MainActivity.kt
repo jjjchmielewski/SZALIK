@@ -10,6 +10,7 @@ import com.szalik.logic.entertainment.GameFlow
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        GameFlow.testMode = true
         setContent {
             Navigation()
         }

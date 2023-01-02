@@ -18,7 +18,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.szalik.logic.common.MeetingMode
 import com.szalik.logic.common.UserMode
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.GameFlow.Companion.status
@@ -63,7 +62,7 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
                             if (players.size < 6) {
                                 Toast.makeText(context, "Zbyt mało graczy!", Toast.LENGTH_LONG).show()
                             } else {
-                                GameFlow.prepareGame()
+                                GameFlow.prepareGameByHost()
                                 GameFlow.playerInGame = true
                                 navController.navigate(Screen.CardScreen.route)
                             }
@@ -75,6 +74,7 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
                 } else {
                     if (status == "STARTED" && !GameFlow.playerInGame) {
                         GameFlow.playerInGame = true
+                        GameFlow.prepareGameByGuest()
                         navController.navigate(Screen.CardScreen.route)
                     } else {
                         Text(

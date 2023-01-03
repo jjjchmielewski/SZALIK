@@ -38,6 +38,10 @@ fun JoinGameScreen(navController: NavController) {
     var gameStatus = ""
     val dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
 
+    if (GameFlow.testMode) {
+        gameId = "123456"
+    }
+
     dbRef.addListenerForSingleValueEvent(object :
         ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
@@ -62,9 +66,7 @@ fun JoinGameScreen(navController: NavController) {
         }
     })
 
-    if (GameFlow.testMode) {
-        gameId = "123456"
-    }
+
 
     SzalikTheme {
         Surface(

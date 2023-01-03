@@ -38,6 +38,7 @@ fun CreateGameScreen(navController: NavController) {
 
     if (clicked) {
         if (exists == false && !transferred) {
+            GameFlow.isHost = true
             val playerId = dbRef.push().key
             val player = Player(name = "Jasio", id = playerId!!)
             GameFlow.thisPlayerId = player.id
@@ -45,7 +46,6 @@ fun CreateGameScreen(navController: NavController) {
 
             dbRef.child(lobbyId).child("state").setValue("WAIT")
             dbRef.child(lobbyId).child("players").child(playerId).setValue(player)
-            GameFlow.isHost = true
             transferred = true
             navController.navigate(Screen.LobbyScreen.withArgs(lobbyId, UserMode.HOST.name))
         } else if (exists == true){
@@ -67,6 +67,7 @@ fun CreateGameScreen(navController: NavController) {
                 Button(
                     onClick = {
                         if (GameFlow.testMode) {
+                            GameFlow.isHost = true
                             val playerId = dbRef.push().key
                             val player = Player(name = "Jasio", id = playerId!!)
                             GameFlow.thisPlayerId = player.id
@@ -74,7 +75,6 @@ fun CreateGameScreen(navController: NavController) {
                             GameFlow.setLobbyId("123456")
                             dbRef.child("123456").child("state").setValue("WAIT")
                             dbRef.child("123456").child("players").child(playerId).setValue(player)
-                            GameFlow.isHost = true
                             navController.navigate(Screen.LobbyScreen.withArgs("123456", UserMode.HOST.name))
                         } else {
                             checkIfLobbyExists(lobbyId)

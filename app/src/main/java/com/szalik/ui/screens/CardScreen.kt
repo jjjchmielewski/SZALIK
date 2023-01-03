@@ -10,8 +10,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +33,10 @@ import com.szalik.ui.theme.SzalikTheme
 fun CardScreen() {
     KeepScreenOn()
     val dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
+
+    var showCard by remember {
+        mutableStateOf(false)
+    }
 
     Log.i("CARD_SCREEN", "Recomposing...")
 
@@ -134,11 +137,11 @@ fun CardScreen() {
                                                     .fillMaxWidth()
                                                     .padding(vertical = 10.dp)
                                                     .clickable {
-                                                        GameFlow.showChoiceList = false
                                                         dbRef
                                                             .child(GameFlow.getLobbyId())
                                                             .child("chosenPlayer")
                                                             .setValue(player.id)
+                                                        GameFlow.showChoiceList = false
                                                     })
                                         }
                                     }
@@ -327,66 +330,138 @@ fun CardScreen() {
                 }
             }
         } else {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
+            //WIDOK DNIA
+            Surface(
+                modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
             ) {
-                Text(
-                    text = "Dzień ${GameFlow.dayNumber}",
-                    textAlign = TextAlign.Center,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }
-                    ?.let { player ->
-                        val fractionColor = when (player.card!!.role!!.fraction) {
-                            Fraction.CITY -> Color(0xFF8D7705)
-                            Fraction.BANDITS -> Color(0xFF6D6C6B)
-                            Fraction.INDIANS -> Color(0xFF680609)
-                            Fraction.ALIENS -> Color(0xFF045A01)
-                        }
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Dzień ${GameFlow.dayNumber}",
+                        textAlign = TextAlign.Center,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (showCard) {
+                        GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }
+                            ?.let { player ->
+                                val fractionColor = when (player.card!!.role!!.fraction) {
+                                    Fraction.CITY -> Color(0xFF8D7705)
+                                    Fraction.BANDITS -> Color(0xFF6D6C6B)
+                                    Fraction.INDIANS -> Color(0xFF680609)
+                                    Fraction.ALIENS -> Color(0xFF045A01)
+                                }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = player.card!!.role!!.polishName,
-                                textAlign = TextAlign.Center,
-                                fontSize = 30.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(fractionColor)
-                        ) {
-                            Text(
-                                text = "Frakcja: ${player.card!!.role!!.fraction.polishName}",
-                                textAlign = TextAlign.Center,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = player.card!!.role!!.description,
-                                textAlign = TextAlign.Center,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Normal
-                            )
-                        }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = player.card!!.role!!.polishName,
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 30.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(fractionColor)
+                                ) {
+                                    Text(
+                                        text = "Frakcja: ${player.card!!.role!!.fraction.polishName}",
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = player.card!!.role!!.description,
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                if (player.card?.actionsLeftCounter != 999) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "Masz jeszcze ${player.card?.actionsLeftCounter} akcji do wykorzystania",
+                                            textAlign = TextAlign.Center,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                                if (player.card?.hasTotem == true) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "Posiadasz posążek!",
+                                            textAlign = TextAlign.Center,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                                if (player.card?.isBlackmailed == true) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "Jesteś szantażowany przez ${GameFlow.listOfPlayers.find { it.card?.role == Role.BLACKMAILER }?.name}",
+                                            textAlign = TextAlign.Center,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                                if (player.card?.isSeduced == true) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "Zostałeś uwiedziony przez ${GameFlow.listOfPlayers.find { it.card?.role == Role.SEDUCER }?.name}",
+                                            textAlign = TextAlign.Center,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
                     }
+                    Button(onClick = {
+                        showCard = !showCard
+                    }) {
+                        Text(
+                            text = if (showCard) "Ukryj szczegóły karty" else "Pokaż szczegóły karty",
+                            textAlign = TextAlign.Center,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 fun handleRoleAction(): String {
-    return when (GameFlow.listOfPlayers.find { it.id == GameFlow.currentPlayerId }?.card?.role) {
+    return when (if (GameFlow.actionTakeover != null) GameFlow.actionTakeover else GameFlow.listOfPlayers.find { it.id == GameFlow.currentPlayerId }?.card?.role) {
         Role.COQUETTE -> {
             if (GameFlow.showChoiceList) {
                 "Wybierz osobę z którą chcesz się zapoznać"

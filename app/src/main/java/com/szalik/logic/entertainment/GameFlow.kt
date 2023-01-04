@@ -1,7 +1,12 @@
 package com.szalik.logic.entertainment
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -15,20 +20,33 @@ class GameFlow {
     companion object {
         var testMode: Boolean = false
         var isHost: Boolean = false
-        var isNight: Boolean by mutableStateOf(true)
+        var isNight: Boolean by mutableStateOf(false)
         var actionTakeover: Role? by mutableStateOf(null)
         val listOfPlayers = mutableStateListOf<Player>()
         val awakenPlayersIds = mutableStateListOf<String>()
         var thisPlayerId: String? = null
-        var status by mutableStateOf("")
         var playerInGame = false
+        var winners by mutableStateOf<Fraction?>(null)
+
+        var status by mutableStateOf("")
         var currentPlayerId by mutableStateOf("")
+        var chosenPlayerId: String = ""
+        var duelingPlayerId by mutableStateOf("")
+        var dueledPlayerId by mutableStateOf("")
+        var votingResult by mutableStateOf<Long?>(null)
+        var playerToSearchId by mutableStateOf("")
+        var searched by mutableStateOf(false)
+        var searchCounter by mutableStateOf(0)
+
         var showActionQuestion by mutableStateOf(false)
         var showChoiceList by mutableStateOf(true)
         var showIdentity by mutableStateOf(false)
         var showTotemLocation by mutableStateOf(false)
         var showConfirmButton by mutableStateOf(false)
-        var chosenPlayerId: String = ""
+        var showDuelChoiceList by mutableStateOf(false)
+        var showSearchChoiceList by mutableStateOf(false)
+        var showVoting by mutableStateOf(false)
+
         var dayNumber = 0
         val eliminatedLastNight = mutableListOf<String>()
         var sharedIdentity by mutableStateOf<Player?>(null)
@@ -46,6 +64,15 @@ class GameFlow {
             dbRef.child(lobbyId!!).child("currentPlayer").setValue("")
             dbRef.child(lobbyId!!).child("chosenPlayer").setValue("")
             dbRef.child(lobbyId!!).child("state").setValue("STARTED")
+            dbRef.child(lobbyId!!).child("voted").setValue(0)
+            dbRef.child(lobbyId!!).child("voting").setValue(0)
+            dbRef.child(lobbyId!!).child("playerToSearch").setValue("")
+            dbRef.child(lobbyId!!).child("dueledPlayer").setValue("")
+            dbRef.child(lobbyId!!).child("duelingPlayer").setValue("")
+            checkVotesGiven()
+            checkPlayerToSearch()
+            checkDueledPlayer()
+            checkDuelingPlayer()
             checkCurrentPlayer()
             checkChosenPlayer()
             nightZero()
@@ -55,6 +82,10 @@ class GameFlow {
         }
 
         fun prepareGameByGuest() {
+            checkVotesGiven()
+            checkPlayerToSearch()
+            checkDueledPlayer()
+            checkDuelingPlayer()
             checkCurrentPlayer()
             checkChosenPlayer()
             nightZero()
@@ -62,14 +93,14 @@ class GameFlow {
 
         fun startGame() {
             Log.i("GAME_FLOW", "Starting game")
-            if (isHost)
-                dbRef.child(lobbyId!!).child("state").setValue("IN_PROGRESS")
+            if (isHost) dbRef.child(lobbyId!!).child("state").setValue("IN_PROGRESS")
         }
 
         fun setLobbyId(lobbyId: String): Boolean {
             this.lobbyId = lobbyId
             checkStatus()
             getPlayers()
+
             return true
         }
 
@@ -86,7 +117,7 @@ class GameFlow {
             rolesQueue.add(Role.BLACKMAILER)
         }
 
-        private fun night() {
+        fun night() {
             rolesQueue.add(Role.SHERIFF)
             rolesQueue.add(Role.PRIEST)
             rolesQueue.add(Role.TAXMAN)
@@ -107,28 +138,27 @@ class GameFlow {
             rolesQueue.add(Role.GREAT_ALIEN)
             rolesQueue.add(Role.GREEN_TENTACLE)
             rolesQueue.add(Role.PURPLE_SUCTION)
+            isNight = true
+            searchCounter = 0
+            handleNextPlayer()
         }
 
         private fun day() {
+            showConfirmButton = false
             indiansKillCounter = 0
             indiansTotemTakeover = false
             sharedIdentity = null
             listOfPlayers.forEach {
-                if (it.card!!.isJailed)
-                    it.card!!.isJailed = false
-                if (it.card!!.isDrunk)
-                    it.card!!.isDrunk = false
-                if (it.card!!.isProtected)
-                    it.card!!.isProtected = false
-                if (it.card!!.isPlaying)
-                    it.card!!.isPlaying = false
+                if (it.card!!.isJailed) it.card!!.isJailed = false
+                if (it.card!!.isDrunk) it.card!!.isDrunk = false
+                if (it.card!!.isProtected) it.card!!.isProtected = false
+                if (it.card!!.isPlaying) it.card!!.isPlaying = false
             }
 
             eliminatedLastNight.forEach {
                 //if hasTotem
             }
 
-            //night()
         }
 
 
@@ -139,8 +169,7 @@ class GameFlow {
             }
             actionTakeover = null
             if (rolesQueue.isNotEmpty()) {
-                var nextPlayer =
-                    listOfPlayers.find { it.card?.role == rolesQueue.first() }
+                var nextPlayer = listOfPlayers.find { it.card?.role == rolesQueue.first() }
                 if (nextPlayer != null) {
                     if (nextPlayer.card?.isDrunk == true || nextPlayer.card?.isJailed == true || nextPlayer.card?.isPlaying == true) {
                         when (nextPlayer.card?.role) {
@@ -228,7 +257,6 @@ class GameFlow {
 
                         else -> awakenPlayersIds.add(nextPlayer!!.id)
                     }
-                    //currentPlayerId = nextPlayer!!.id
                     rolesQueue.removeFirst()
                     dbRef.child(lobbyId!!).child("currentPlayer").setValue(nextPlayer!!.id)
                 } else {
@@ -245,8 +273,7 @@ class GameFlow {
 
         private fun handleChoice() {
             Log.i(
-                "GAME_FLOW",
-                "Handling choice for chosen: ${listOfPlayers.find { it.id == chosenPlayerId }?.name}"
+                "GAME_FLOW", "Handling choice for chosen: ${listOfPlayers.find { it.id == chosenPlayerId }?.name}"
             )
             var voiceMessage = ""
             when (if (actionTakeover != null) actionTakeover else listOfPlayers.find { it.id == currentPlayerId }?.card?.role) {
@@ -265,7 +292,7 @@ class GameFlow {
                             passTotemTo(Role.SHERIFF)
                         }
                     }
-
+                    awakenPlayersIds.add(chosenPlayerId)
                 }
                 Role.PRIEST -> {
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
@@ -359,7 +386,7 @@ class GameFlow {
                 }
                 else -> {}
             }
-
+            dbRef.child(lobbyId!!).child("chosenPlayer").setValue("")
         }
 
         private fun whereIsTotem() {
@@ -376,8 +403,7 @@ class GameFlow {
             listOfPlayers.find { it.card?.role == role }?.card?.hasTotem = true
             listOfPlayers.find { it.id == playerWithTotemId }?.card?.hasTotem = false
             playerWithTotemId = listOfPlayers.find { it.card?.role == role }?.id!!
-            if (listOfPlayers.find { it.card?.role == role }?.card?.role?.fraction == Fraction.INDIANS)
-                indiansTotemTakeover = true
+            if (listOfPlayers.find { it.card?.role == role }?.card?.role?.fraction == Fraction.INDIANS) indiansTotemTakeover = true
         }
 
         private fun passTotemTo(id: String) {
@@ -385,8 +411,7 @@ class GameFlow {
             listOfPlayers.find { it.id == id }?.card?.hasTotem = true
             listOfPlayers.find { it.id == playerWithTotemId }?.card?.hasTotem = false
             playerWithTotemId = id
-            if (listOfPlayers.find { it.id == id }?.card?.role?.fraction == Fraction.INDIANS)
-                indiansTotemTakeover = true
+            if (listOfPlayers.find { it.id == id }?.card?.role?.fraction == Fraction.INDIANS) indiansTotemTakeover = true
         }
 
         private fun giveCards(numberOfPlayers: Int) {
@@ -441,22 +466,22 @@ class GameFlow {
         private fun eliminate(predatorId: String, preyId: String) {
             val chosenPlayer = listOfPlayers.find { it.id == preyId }
             var voiceMessage = "Wybrana osoba nie została zabita ponieważ "
-            if (chosenPlayer!!.card!!.isJailed)
-                voiceMessage += "jest w areszcie"
-            else
-                if (chosenPlayer.card!!.isProtected)
-                    voiceMessage += "jest chroniona"
-                else {
-                    eliminatedLastNight.add(preyId)
-                    listOfPlayers.find { it.id == preyId }?.eliminated = true
-                    passTotemTo(predatorId)
-                    voiceMessage = "Wybrana osoba została zabita"
-                }
+            if (chosenPlayer!!.card!!.isJailed) voiceMessage += "jest w areszcie"
+            else if (chosenPlayer.card!!.isProtected) voiceMessage += "jest chroniona"
+            else {
+                eliminatedLastNight.add(preyId)
+                listOfPlayers.find { it.id == preyId }?.eliminated = true
+                passTotemTo(predatorId)
+                voiceMessage = "Wybrana osoba została zabita"
+            }
+        }
+
+        fun hang(id: String) {
+
         }
 
         private fun getPlayers() {
-            dbRef.child(lobbyId!!).child("players")
-                .addValueEventListener(object : ValueEventListener {
+            dbRef.child(lobbyId!!).child("players").addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         listOfPlayers.clear()
                         for (item in snapshot.children) {
@@ -471,14 +496,11 @@ class GameFlow {
         }
 
         private fun checkStatus() {
-            dbRef.child(lobbyId!!).child("state")
-                .addValueEventListener(object : ValueEventListener {
+            dbRef.child(lobbyId!!).child("state").addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         Log.i("GAME_FLOW", "Status is ${snapshot.value}!")
-                        if (snapshot.value != null)
-                            status = snapshot.value as String
-                        if (snapshot.value == "IN_PROGRESS")
-                            handleNextPlayer()
+                        if (snapshot.value != null) status = snapshot.value as String
+                        if (snapshot.value == "IN_PROGRESS") handleNextPlayer()
                     }
 
                     override fun onCancelled(error: DatabaseError) {
@@ -488,12 +510,10 @@ class GameFlow {
         }
 
         private fun checkCurrentPlayer() {
-            dbRef.child(lobbyId!!).child("currentPlayer")
-                .addValueEventListener(object : ValueEventListener {
+            dbRef.child(lobbyId!!).child("currentPlayer").addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         Log.i(
-                            "GAME_FLOW",
-                            "Current player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
+                            "GAME_FLOW", "Current player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
                         )
                         if (snapshot.value != "") {
                             currentPlayerId = snapshot.value as String
@@ -511,22 +531,97 @@ class GameFlow {
         }
 
         private fun checkChosenPlayer() {
-            dbRef.child(lobbyId!!).child("chosenPlayer")
-                .addValueEventListener(object : ValueEventListener {
+            dbRef.child(lobbyId!!).child("chosenPlayer").addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         Log.i(
-                            "GAME_FLOW",
-                            "Chosen player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
+                            "GAME_FLOW", "Chosen player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
                         )
                         chosenPlayerId = snapshot.value as String
-                        if (chosenPlayerId != "")
-                            handleChoice()
+                        if (chosenPlayerId != "") handleChoice()
                     }
 
                     override fun onCancelled(error: DatabaseError) {
 
                     }
                 })
+        }
+
+        private fun checkVotesGiven() {
+            dbRef.child(lobbyId!!).child("voted").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i("GAME_FLOW", "${snapshot.value} players already voted")
+                    if (snapshot.value.toString().toInt() == listOfPlayers.size) {
+                        Handler(Looper.getMainLooper()).postDelayed({checkVotingResults()}, 1000)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+        }
+
+        private fun checkVotingResults() {
+            dbRef.child(lobbyId!!).child("voting").addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.v("GAME_FLOW", "Voting result is ${snapshot.value}")
+                    votingResult = snapshot.value as Long
+                    showConfirmButton = true
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+        }
+
+        private fun checkDueledPlayer() {
+            dbRef.child(lobbyId!!).child("dueledPlayer").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i(
+                        "GAME_FLOW", "Dueled player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
+                    )
+                    dueledPlayerId = snapshot.value as String
+                    if (dueledPlayerId != "")
+                        showVoting = true
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+        }
+
+        private fun checkDuelingPlayer() {
+            dbRef.child(lobbyId!!).child("duelingPlayer").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i(
+                        "GAME_FLOW", "Dueling player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
+                    )
+                    duelingPlayerId = snapshot.value as String
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+        }
+
+        private fun checkPlayerToSearch() {
+            dbRef.child(lobbyId!!).child("playerToSearch").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i(
+                        "GAME_FLOW", "Player to search is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
+                    )
+                    playerToSearchId = snapshot.value as String
+                    if (playerToSearchId != "")
+                        showVoting = true
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
         }
 
         fun reset() {

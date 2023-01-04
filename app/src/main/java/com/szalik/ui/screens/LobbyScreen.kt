@@ -18,7 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.szalik.logic.common.UserMode
+import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.GameFlow.Companion.status
 import com.szalik.ui.theme.SzalikTheme

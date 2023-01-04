@@ -5,17 +5,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.szalik.logic.common.MeetingMode
+import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun Timer(totalTime: Long, mode: MeetingMode) {
-    val dbRef = DatabaseConnection.getDatabase().getReference("lobbies/${GameFlow.getLobbyId()}")
 
     var currentTime by remember {
         mutableStateOf(totalTime)

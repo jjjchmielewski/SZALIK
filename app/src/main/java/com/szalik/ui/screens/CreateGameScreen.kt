@@ -14,7 +14,7 @@ import androidx.navigation.NavController
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.szalik.logic.common.UserMode
+import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.Player

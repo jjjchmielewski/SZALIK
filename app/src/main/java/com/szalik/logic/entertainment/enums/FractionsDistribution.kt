@@ -31,8 +31,7 @@ enum class FractionsDistribution(
     TWENTY_SEVEN(27, 11, 5, 7, 4),
     TWENTY_EIGHT(28, 12, 5, 7, 4),
     TWENTY_NINE(29, 12, 5, 7, 5),
-    THIRTY(30, 12, 6, 7, 5),
-    THIRTY_ONE(31, 13, 6, 7, 5);
+    THIRTY(30, 12, 6, 7, 5);
 
     companion object {
         fun fromPLayersNumber(number: Int) =

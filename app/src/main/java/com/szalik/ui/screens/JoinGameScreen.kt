@@ -1,6 +1,5 @@
 package com.szalik.ui.screens
 
-import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -16,14 +15,11 @@ import androidx.navigation.NavController
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.szalik.logic.common.UserMode
+import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.Player
 import com.szalik.ui.theme.SzalikTheme
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun JoinGameScreen(navController: NavController) {

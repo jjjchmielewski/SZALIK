@@ -18,12 +18,6 @@ enum class Role(
         999,
         Fraction.CITY
     ),
-    MAYOR(
-        "Burmistrz",
-        "Burmistrz może w dowolnym momencie gry ujawnić swoją tożsamość. Jeśli zrobi to w momencie skazywania kogoś na powieszenie, może dodatkowo ułaskawić wieszaną właśnie osobę",
-        1,
-        Fraction.CITY
-    ),
     CITIZEN(
         "Miastowy",
         "Nie ma specjalnych zdolności",

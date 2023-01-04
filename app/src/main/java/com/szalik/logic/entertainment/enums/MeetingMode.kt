@@ -1,4 +1,4 @@
-package com.szalik.logic.common
+package com.szalik.logic.entertainment.enums
 
 enum class MeetingMode {
     BUSINESS,

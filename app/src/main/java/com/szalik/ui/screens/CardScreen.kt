@@ -3,8 +3,6 @@ package com.szalik.ui.screens
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -15,13 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.common.RoleActionHandler
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
-import com.szalik.logic.entertainment.Player
 import com.szalik.logic.entertainment.enums.Fraction
 import com.szalik.logic.entertainment.enums.Role
 import com.szalik.logic.entertainment.enums.VotingMode
@@ -41,7 +37,27 @@ fun CardScreen() {
     Log.i("CARD_SCREEN", "Recomposing...")
 
     SzalikTheme {
-        if (GameFlow.isNight) {
+        if (GameFlow.listOfPlayers.none { it.id == GameFlow.thisPlayerId }) {
+            Surface(
+                modifier = Modifier.fillMaxSize(), color = Color(0xFF5A5A5A)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Wyeliminowany",
+                        textAlign = TextAlign.Center,
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3A3A3A),
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+            }
+        } else if (GameFlow.isNight) {
             if (GameFlow.status == "IN_PROGRESS" && !GameFlow.awakenPlayersIds.contains(GameFlow.thisPlayerId)) {
                 //GRACZ ŚPI
                 Surface(
@@ -49,7 +65,7 @@ fun CardScreen() {
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.SpaceEvenly,
+                        verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
@@ -85,7 +101,7 @@ fun CardScreen() {
                                 Row(Modifier.fillMaxWidth()) {
                                     Button(onClick = {
                                         GameFlow.showActionQuestion = false
-                                        if (GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }?.card?.role == Role.BINOCULARS_EYE)
+                                        if (GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }?.card?.role == Role.BINOCULARS_EYE || GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }?.card?.role == Role.TAXMAN)
                                             GameFlow.showTotemLocation = true
                                         else
                                             GameFlow.showChoiceList = true
@@ -116,12 +132,20 @@ fun CardScreen() {
                                     Text(
                                         text = text,
                                         textAlign = TextAlign.Center,
-                                        fontSize = 20.sp,
+                                        fontSize = 30.sp,
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
                                 if (GameFlow.showChoiceList) {
-                                    ChoiceList()
+                                    if (text.contains("Naradź się z innymi Kosmitami i wskaż kto ma przechować tej nocy posążek")) {
+                                        ChoiceList(fraction = Fraction.ALIENS)
+                                    } else if (text.contains("Naradź się z innymi Indianinami i wskaż kto ma przechować tej nocy posążek")) {
+                                        ChoiceList(fraction = Fraction.INDIANS)
+                                    } else if (text.contains("Naradź się z innymi Bandytami i wskaż kto ma przechować posążek tej nocy")) {
+                                        ChoiceList(fraction = Fraction.BANDITS)
+                                    } else {
+                                        ChoiceList()
+                                    }
                                 } else if (GameFlow.showIdentity) {
                                     GameFlow.sharedIdentity?.let { player ->
                                         val fractionColor = when (player.card!!.role!!.fraction) {
@@ -207,17 +231,6 @@ fun CardScreen() {
                                         Text(text = "Kontynuuj grę")
                                     }
                                 } else if (GameFlow.showConfirmButton) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-
-                                        Text(
-                                            text = text,
-                                            textAlign = TextAlign.Center,
-                                            fontSize = 30.sp,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
                                     Button(onClick = {
                                         GameFlow.showConfirmButton = false
                                         if (GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }?.card?.role == Role.CHIEF) {
@@ -279,6 +292,8 @@ fun CardScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (GameFlow.showDuelChoiceList) {
+                        dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
+                        dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
                         Text(
                             text = "Kogo chcesz wyzwać na pojedynek?",
                             textAlign = TextAlign.Center,
@@ -289,6 +304,7 @@ fun CardScreen() {
                         ChoiceList(VotingMode.DUEL)
 
                     } else if (GameFlow.showSearchChoiceList) {
+                        dbRef.child(GameFlow.getLobbyId()).child("playerToSearch").setValue("")
                         Text(
                             text = "Kogo chcesz zgłosić do przeszukania?",
                             textAlign = TextAlign.Center,
@@ -314,95 +330,111 @@ fun CardScreen() {
                             val badGunslingerId = GameFlow.listOfPlayers.find { it.card?.role == Role.BAD_GUNSLINGER }?.id
 
                             if (GameFlow.votingResult!! > 100) {
-                                text = "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.duelingPlayerId }?.name} dzięki decyzji sędziego ${GameFlow.listOfPlayers.find { it.card?.role == Role.JUDGE }?.name}"
+                                text =
+                                    "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.duelingPlayerId }?.name} dzięki decyzji sędziego ${GameFlow.listOfPlayers.find { it.card?.role == Role.JUDGE }?.name}"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.dueledPlayerId)
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
-                                    dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                                    GameFlow.duelingPlayerId = ""
+                                    GameFlow.dueledPlayerId = ""
                                 }
                             } else if (GameFlow.votingResult!! < -100) {
-                                text = "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.dueledPlayerId }?.name} dzięki decyzji sędziego ${GameFlow.listOfPlayers.find { it.card?.role == Role.JUDGE }?.name}"
+                                text =
+                                    "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.dueledPlayerId }?.name} dzięki decyzji sędziego ${GameFlow.listOfPlayers.find { it.card?.role == Role.JUDGE }?.name}"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.duelingPlayerId)
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
-                                    dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                                    GameFlow.duelingPlayerId = ""
+                                    GameFlow.dueledPlayerId = ""
                                 }
                             } else if ((GameFlow.duelingPlayerId == goodGunslingerId && GameFlow.dueledPlayerId != badGunslingerId) || (GameFlow.dueledPlayerId == goodGunslingerId && GameFlow.duelingPlayerId != badGunslingerId)) {
                                 text = "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.duelingPlayerId }?.name}"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.dueledPlayerId)
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
-                                    dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                                    GameFlow.duelingPlayerId = ""
+                                    GameFlow.dueledPlayerId = ""
                                 }
                             } else if ((GameFlow.duelingPlayerId != goodGunslingerId && GameFlow.dueledPlayerId == badGunslingerId) || (GameFlow.dueledPlayerId != goodGunslingerId && GameFlow.duelingPlayerId == badGunslingerId)) {
                                 text = "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.dueledPlayerId }?.name}"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.duelingPlayerId)
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
-                                    dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                                    GameFlow.duelingPlayerId = ""
+                                    GameFlow.dueledPlayerId = ""
                                 }
                             } else if (GameFlow.votingResult!! > 0) {
                                 text = "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.duelingPlayerId }?.name}"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.dueledPlayerId)
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
-                                    dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                                    GameFlow.duelingPlayerId = ""
+                                    GameFlow.dueledPlayerId = ""
                                 }
                             } else if (GameFlow.votingResult!! < 0) {
                                 text = "Pojedynek zwyciężył ${GameFlow.listOfPlayers.find { it.id == GameFlow.dueledPlayerId }?.name}"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.duelingPlayerId)
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
-                                    dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                                    GameFlow.duelingPlayerId = ""
+                                    GameFlow.dueledPlayerId = ""
                                 }
                             } else {
-                                text = "Remis"
+                                text = "Remis - obydwaj gracze zostają wyeliminowani"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.dueledPlayerId)
+                                    GameFlow.eliminateDuringDay(GameFlow.duelingPlayerId)
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
-                                    dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                                    GameFlow.duelingPlayerId = ""
+                                    GameFlow.dueledPlayerId = ""
                                 }
                             }
 
                         } else if (GameFlow.playerToSearchId != "" && !GameFlow.searched) {
                             if (GameFlow.votingResult!! > 0) {
                                 if (GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.card?.hasTotem == true) {
-                                    text = "Przy graczu ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} znaleziono posążek!"
+                                    text =
+                                        "Przy graczu ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} znaleziono posążek!"
                                     function = {
                                         GameFlow.winners = Fraction.CITY
                                         GameFlow.showConfirmButton = false
                                         GameFlow.searchCounter++
                                     }
                                 } else {
-                                    text = "Gracz ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} został przeszukany - nie miał posążka"
+                                    text =
+                                        "Gracz ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} został przeszukany - nie miał posążka"
                                     function = {
                                         GameFlow.searched = true
                                         GameFlow.showConfirmButton = false
                                         GameFlow.showVoting = true
                                         GameFlow.searchCounter++
                                     }
-
                                 }
                             } else {
-                                text = "Gracz ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} nie został przeszukany"
+                                text =
+                                    "Gracz ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} nie został przeszukany"
                                 function = {
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("playerToSearch").setValue("")
+                                    GameFlow.playerToSearchId = ""
                                 }
                             }
 
-                        } else if (GameFlow.playerToSearchId != "" && GameFlow.searched){
+                        } else if (GameFlow.playerToSearchId != "" && GameFlow.searched) {
                             if (GameFlow.votingResult!! > 0) {
                                 text = "Gracz ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} został powieszony"
                                 function = {
+                                    GameFlow.eliminateDuringDay(GameFlow.playerToSearchId)
+                                    GameFlow.playerToSearchId = ""
+                                    GameFlow.searched = false
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("playerToSearch").setValue("")
                                 }
                             } else {
-                                text = "Gracz ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} został ułaskawiony"
+                                text =
+                                    "Gracz ${GameFlow.listOfPlayers.find { it.id == GameFlow.playerToSearchId }?.name} został ułaskawiony"
                                 function = {
+                                    GameFlow.playerToSearchId = ""
+                                    GameFlow.searched = false
                                     GameFlow.showConfirmButton = false
-                                    dbRef.child(GameFlow.getLobbyId()).child("playerToSearch").setValue("")
                                 }
                             }
                         } else {
@@ -430,6 +462,110 @@ fun CardScreen() {
                             )
                         }
 
+                    } else if (GameFlow.showEliminated && GameFlow.eliminatedPlayers.isNotEmpty()) {
+                        Text(
+                            text = "Wyeliminowano gracza:",
+                            textAlign = TextAlign.Center,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        GameFlow.eliminatedPlayers.first().let { playerId ->
+                            val player = GameFlow.listOfPlayers.find { it.id == playerId }
+
+                            val fractionColor = when (player?.card!!.role!!.fraction) {
+                                Fraction.CITY -> Color(0xFF8D7705)
+                                Fraction.BANDITS -> Color(0xFF6D6C6B)
+                                Fraction.INDIANS -> Color(0xFF680609)
+                                Fraction.ALIENS -> Color(0xFF045A01)
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = player.name,
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 30.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Rola: ${player.card!!.role!!.polishName}",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(fractionColor)
+                            ) {
+                                Text(
+                                    text = "Frakcja: ${player.card!!.role!!.fraction.polishName}",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            Button(onClick = {
+                                GameFlow.listOfPlayers.remove(GameFlow.listOfPlayers.find { it.id == GameFlow.eliminatedPlayers.first() })
+                                GameFlow.eliminatedPlayers.removeFirst()
+                                if (GameFlow.eliminatedPlayers.isEmpty()) {
+                                    GameFlow.showEliminated = false
+                                }
+                            }) {
+                                Text(
+                                    text = "Kontynuuj",
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    } else if (GameFlow.winners != null) {
+                        val text = when (GameFlow.winners) {
+                            Fraction.CITY -> {
+                                "Miastowi zdobyli posążek!"
+                            }
+                            Fraction.BANDITS -> {
+                                "Bandyci odpływają razem z posążkiem na aukcję antyków!"
+                            }
+                            Fraction.INDIANS -> {
+                                "Indianie zabili wszystkie blade twarze!"
+                            }
+                            Fraction.ALIENS -> {
+                                "Kosmici odlatują na swoją planetę!"
+                            }
+                            else -> {
+                                ""
+                            }
+                        }
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "KONIEC GRY",
+                                textAlign = TextAlign.Center,
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = text,
+                                textAlign = TextAlign.Center,
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     } else {
                         if ((GameFlow.listOfPlayers.size >= 16 && GameFlow.searchCounter == 3) || (GameFlow.listOfPlayers.size < 16 && GameFlow.searchCounter == 2)) {
                             GameFlow.night()

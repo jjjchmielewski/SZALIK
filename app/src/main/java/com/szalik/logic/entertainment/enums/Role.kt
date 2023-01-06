@@ -54,12 +54,6 @@ enum class Role(
         1,
         Fraction.CITY
     ),
-    DOCTOR(
-        "Doktor",
-        "Lekarz raz w trakcie gry może wskrzesić świeżo zmarłą osobę, zanim zostanie odkryta jej karta. Dotyczy to osób zmarłych w pojedynkach oraz zabitych w nocy (nie powieszonych). Lekarz działa tajnie",
-        1,
-        Fraction.CITY
-    ),
     PRIEST(
         "Pastor",
         "Co noc (również zerowej nocy) wybiera osobę którą chce wyspowiadać i dowiaduje się, z jakiej frakcji jest ta osoba. Osoba spowiadana nie wie, że została wyspowiadana",
@@ -68,7 +62,7 @@ enum class Role(
     ),
     SHERIFF(
         "Szeryf",
-        "Jeżeli Szeryf żyje, można nie przyjąć pojedynku. Ponadto szeryf, co noc (również zerowej nocy) zamyka w więzieniu jedną osobę. Jeżeli ta osoba miała posążek, przejmuje go szeryf. Osoba aresztowana staje się nieaktywna przez jedną noc tj. nie budzi się i nie może zostać zabita",
+        "Szeryf, co noc (również zerowej nocy) zamyka w więzieniu jedną osobę. Jeżeli ta osoba miała posążek, przejmuje go szeryf. Osoba aresztowana staje się nieaktywna przez jedną noc tj. nie budzi się i nie może zostać zabita",
         999,
         Fraction.CITY
     ),
@@ -142,12 +136,6 @@ enum class Role(
         "Wódz",
         "Podejmuje ostateczne decyzje dotyczące zabicia kogoś w nocy przez Indian i ukrycia posążka",
         999,
-        Fraction.INDIANS
-    ),
-    SHAMANESS(
-        "Szamanka",
-        "Szamanka raz w trakcie gry może podłożyć komuś truciznę. Następnego dnia, zanim nastąpi głosowanie o przeszukanie, ta osoba robi się zielona na twarzy i ginie",
-        1,
         Fraction.INDIANS
     ),
     LONELY_COYOTE(

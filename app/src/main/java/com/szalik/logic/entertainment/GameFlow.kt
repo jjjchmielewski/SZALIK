@@ -20,7 +20,7 @@ class GameFlow {
     companion object {
         var testMode: Boolean = false
         var isHost: Boolean = false
-        var isNight: Boolean by mutableStateOf(false)
+        var isNight: Boolean by mutableStateOf(true)
         var actionTakeover: Role? by mutableStateOf(null)
         val listOfPlayers = mutableStateListOf<Player>()
         val awakenPlayersIds = mutableStateListOf<String>()
@@ -37,6 +37,7 @@ class GameFlow {
         var playerToSearchId by mutableStateOf("")
         var searched by mutableStateOf(false)
         var searchCounter by mutableStateOf(0)
+        var aliensSignalCounter = 0
 
         var showActionQuestion by mutableStateOf(false)
         var showChoiceList by mutableStateOf(true)
@@ -46,9 +47,10 @@ class GameFlow {
         var showDuelChoiceList by mutableStateOf(false)
         var showSearchChoiceList by mutableStateOf(false)
         var showVoting by mutableStateOf(false)
+        var showEliminated by mutableStateOf(false)
 
         var dayNumber = 0
-        val eliminatedLastNight = mutableListOf<String>()
+        val eliminatedPlayers = mutableListOf<String>()
         var sharedIdentity by mutableStateOf<Player?>(null)
         var playerWithTotemId = ""
         var indiansKillCounter = 9
@@ -109,6 +111,9 @@ class GameFlow {
         }
 
         private fun nightZero() {
+            listOfPlayers.find { it.card?.role == Role.WARLORD }?.card?.hasTotem = true
+            whereIsTotem()
+
             rolesQueue.add(Role.COQUETTE)
             rolesQueue.add(Role.SEDUCER)
             rolesQueue.add(Role.SHERIFF)
@@ -131,7 +136,6 @@ class GameFlow {
             rolesQueue.add(Role.CHIEF)
             rolesQueue.add(Role.LONELY_COYOTE)
             rolesQueue.add(Role.BURNING_RAGE)
-            rolesQueue.add(Role.SHAMANESS)
             rolesQueue.add(Role.WARRIOR)
             rolesQueue.add(Role.BINOCULARS_EYE)
             rolesQueue.add(Role.MIND_EATER)
@@ -154,11 +158,21 @@ class GameFlow {
                 if (it.card!!.isProtected) it.card!!.isProtected = false
                 if (it.card!!.isPlaying) it.card!!.isPlaying = false
             }
-
-            eliminatedLastNight.forEach {
-                //if hasTotem
+            showEliminated = true
+            if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.CITY) {
+                winners = Fraction.CITY
             }
-
+            if (aliensSignalCounter == 3) {
+                winners = Fraction.ALIENS
+            }
+            if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.BANDITS &&
+                ((dayNumber >= 4 && listOfPlayers.size <= 16) || dayNumber >= 5)
+            ) {
+                winners = Fraction.BANDITS
+            }
+            if (listOfPlayers.none { it.card?.role?.fraction != Fraction.INDIANS } && listOfPlayers.find { it.card?.role?.fraction == Fraction.INDIANS } != null) {
+                winners = Fraction.INDIANS
+            }
         }
 
 
@@ -167,6 +181,7 @@ class GameFlow {
             rolesQueue.forEach {
                 Log.i("ROLES_QUEUE", it.name)
             }
+            showActionQuestion = false
             actionTakeover = null
             if (rolesQueue.isNotEmpty()) {
                 var nextPlayer = listOfPlayers.find { it.card?.role == rolesQueue.first() }
@@ -178,21 +193,33 @@ class GameFlow {
                                     ?.let {
                                         nextPlayer = it
                                         actionTakeover = Role.WARLORD
-                                    }
+                                    } ?: run {
+                                    rolesQueue.removeFirst()
+                                    handleNextPlayer()
+                                    return
+                                }
                             }
                             Role.CHIEF -> {
                                 listOfPlayers.find { it.id != nextPlayer?.id && it.card?.role?.fraction == Fraction.INDIANS && !(it.card?.isDrunk == true || it.card?.isJailed == true || it.card?.isPlaying == true) }
                                     ?.let {
                                         nextPlayer = it
                                         actionTakeover = Role.CHIEF
-                                    }
+                                    } ?: run {
+                                    rolesQueue.removeFirst()
+                                    handleNextPlayer()
+                                    return
+                                }
                             }
                             Role.GREAT_ALIEN -> {
                                 listOfPlayers.find { it.id != nextPlayer?.id && it.card?.role?.fraction == Fraction.ALIENS && !(it.card?.isDrunk == true || it.card?.isJailed == true || it.card?.isPlaying == true) }
                                     ?.let {
                                         nextPlayer = it
                                         actionTakeover = Role.GREAT_ALIEN
-                                    }
+                                    } ?: run {
+                                    rolesQueue.removeFirst()
+                                    handleNextPlayer()
+                                    return
+                                }
                             }
                             else -> {
                                 rolesQueue.removeFirst()
@@ -229,12 +256,16 @@ class GameFlow {
 
                     when (nextPlayer?.card?.role?.fraction) {
                         Fraction.BANDITS -> {
-                            listOfPlayers.filter { it.card?.role?.fraction == Fraction.BANDITS && it.card?.isJailed == false && it.card?.isDrunk == false && it.card?.isPlaying == false }
-                                .let {
-                                    it.forEach { player ->
-                                        awakenPlayersIds.add(player.id)
+                            if (nextPlayer?.card?.role != Role.BLACKMAILER && actionTakeover == null) {
+                                listOfPlayers.filter { it.card?.role?.fraction == Fraction.BANDITS && it.card?.isJailed == false && it.card?.isDrunk == false && it.card?.isPlaying == false }
+                                    .let {
+                                        it.forEach { player ->
+                                            awakenPlayersIds.add(player.id)
+                                        }
                                     }
-                                }
+                            } else {
+                                awakenPlayersIds.add(nextPlayer!!.id)
+                            }
                         }
 
                         Fraction.INDIANS -> {
@@ -292,7 +323,6 @@ class GameFlow {
                             passTotemTo(Role.SHERIFF)
                         }
                     }
-                    awakenPlayersIds.add(chosenPlayerId)
                 }
                 Role.PRIEST -> {
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
@@ -306,6 +336,9 @@ class GameFlow {
                 Role.BODYGUARD -> {
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isProtected = true
                     lastProtectedPlayerId = chosenPlayerId
+                }
+                Role.TAXMAN -> {
+                    sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                 }
                 Role.WARLORD -> {
                     if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.BANDITS) {
@@ -352,9 +385,6 @@ class GameFlow {
                 Role.BINOCULARS_EYE -> {
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                 }
-                Role.SHAMANESS -> {
-                    listOfPlayers.find { it.id == chosenPlayerId }?.card?.isPoisoned = true
-                }
                 Role.LONELY_COYOTE -> {
                     eliminate(currentPlayerId, chosenPlayerId)
                 }
@@ -366,9 +396,11 @@ class GameFlow {
                 }
                 Role.GREAT_ALIEN -> {
                     if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.ALIENS) {
+                        aliensSignalCounter++
                         passTotemTo(chosenPlayerId)
                     } else {
                         if (listOfPlayers.find { it.id == chosenPlayerId }?.card?.hasTotem == true) {
+                            aliensSignalCounter++
                             passTotemTo(currentPlayerId)
                         }
                     }
@@ -386,6 +418,7 @@ class GameFlow {
                 }
                 else -> {}
             }
+            chosenPlayerId = ""
             dbRef.child(lobbyId!!).child("chosenPlayer").setValue("")
         }
 
@@ -400,16 +433,16 @@ class GameFlow {
 
         private fun passTotemTo(role: Role) {
             whereIsTotem()
-            listOfPlayers.find { it.card?.role == role }?.card?.hasTotem = true
             listOfPlayers.find { it.id == playerWithTotemId }?.card?.hasTotem = false
+            listOfPlayers.find { it.card?.role == role }?.card?.hasTotem = true
             playerWithTotemId = listOfPlayers.find { it.card?.role == role }?.id!!
             if (listOfPlayers.find { it.card?.role == role }?.card?.role?.fraction == Fraction.INDIANS) indiansTotemTakeover = true
         }
 
         private fun passTotemTo(id: String) {
             whereIsTotem()
-            listOfPlayers.find { it.id == id }?.card?.hasTotem = true
             listOfPlayers.find { it.id == playerWithTotemId }?.card?.hasTotem = false
+            listOfPlayers.find { it.id == id }?.card?.hasTotem = true
             playerWithTotemId = id
             if (listOfPlayers.find { it.id == id }?.card?.role?.fraction == Fraction.INDIANS) indiansTotemTakeover = true
         }
@@ -427,17 +460,23 @@ class GameFlow {
                 rolesToGive.add(Role.WARLORD)
                 rolesToGive.add(Role.BLACKMAILER)
             } else {
-                for (i in distribution.city downTo 1) {
+                rolesToGive.add(Role.SHERIFF)
+                allRoles.remove(Role.SHERIFF)
+                rolesToGive.add(Role.WARLORD)
+                allRoles.remove(Role.WARLORD)
+                rolesToGive.add(Role.CHIEF)
+                allRoles.remove(Role.CHIEF)
+                for (i in distribution.city downTo 2) {
                     val role = allRoles.filter { it.fraction == Fraction.CITY }.random()
                     allRoles.remove(role)
                     rolesToGive.add(role)
                 }
-                for (i in distribution.bandits downTo 1) {
+                for (i in distribution.bandits downTo 2) {
                     val role = allRoles.filter { it.fraction == Fraction.BANDITS }.random()
                     allRoles.remove(role)
                     rolesToGive.add(role)
                 }
-                for (i in distribution.indians downTo 1) {
+                for (i in distribution.indians downTo 2) {
                     val role = allRoles.filter { it.fraction == Fraction.INDIANS }.random()
                     allRoles.remove(role)
                     rolesToGive.add(role)
@@ -469,81 +508,106 @@ class GameFlow {
             if (chosenPlayer!!.card!!.isJailed) voiceMessage += "jest w areszcie"
             else if (chosenPlayer.card!!.isProtected) voiceMessage += "jest chroniona"
             else {
-                eliminatedLastNight.add(preyId)
+                eliminatedPlayers.add(preyId)
                 listOfPlayers.find { it.id == preyId }?.eliminated = true
                 passTotemTo(predatorId)
+                removeBlackmailerSeducerEffect(chosenPlayer.card?.role!!)
+                showEliminated = true
                 voiceMessage = "Wybrana osoba została zabita"
             }
         }
 
-        fun hang(id: String) {
+        fun eliminateDuringDay(preyId: String) {
+            val chosenPlayer = listOfPlayers.find { it.id == preyId }
+            if (chosenPlayer?.card?.hasTotem == true) {
+                eliminatedPlayers.add(preyId)
+                listOfPlayers.find { it.id == preyId }?.eliminated = true
+                showEliminated = true
+                winners = Fraction.CITY
+            } else {
+                eliminatedPlayers.add(preyId)
+                listOfPlayers.find { it.id == preyId }?.eliminated = true
+                showEliminated = true
+                removeBlackmailerSeducerEffect(chosenPlayer?.card?.role!!)
+            }
+        }
 
+        private fun removeBlackmailerSeducerEffect(role: Role) {
+            if (role == Role.SEDUCER) {
+                listOfPlayers.forEach {
+                    if (it.card!!.isJailed) it.card!!.isSeduced = false
+                }
+            } else if (role == Role.BLACKMAILER) {
+                listOfPlayers.forEach {
+                    if (it.card!!.isJailed) it.card!!.isBlackmailed = false
+                }
+            }
         }
 
         private fun getPlayers() {
             dbRef.child(lobbyId!!).child("players").addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        listOfPlayers.clear()
-                        for (item in snapshot.children) {
-                            listOfPlayers.add(item.getValue(Player::class.java)!!)
-                        }
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    listOfPlayers.clear()
+                    for (item in snapshot.children) {
+                        listOfPlayers.add(item.getValue(Player::class.java)!!)
                     }
+                }
 
-                    override fun onCancelled(error: DatabaseError) {
+                override fun onCancelled(error: DatabaseError) {
 
-                    }
-                })
+                }
+            })
         }
 
         private fun checkStatus() {
             dbRef.child(lobbyId!!).child("state").addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        Log.i("GAME_FLOW", "Status is ${snapshot.value}!")
-                        if (snapshot.value != null) status = snapshot.value as String
-                        if (snapshot.value == "IN_PROGRESS") handleNextPlayer()
-                    }
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i("GAME_FLOW", "Status is ${snapshot.value}!")
+                    if (snapshot.value != null) status = snapshot.value as String
+                    if (snapshot.value == "IN_PROGRESS") handleNextPlayer()
+                }
 
-                    override fun onCancelled(error: DatabaseError) {
+                override fun onCancelled(error: DatabaseError) {
 
-                    }
-                })
+                }
+            })
         }
 
         private fun checkCurrentPlayer() {
             dbRef.child(lobbyId!!).child("currentPlayer").addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        Log.i(
-                            "GAME_FLOW", "Current player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
-                        )
-                        if (snapshot.value != "") {
-                            currentPlayerId = snapshot.value as String
-                        } else if (snapshot.value == "" && status == "IN_PROGRESS") {
-                            awakenPlayersIds.clear()
-                            handleNextPlayer()
-                        }
-
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i(
+                        "GAME_FLOW", "Current player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
+                    )
+                    if (snapshot.value != "") {
+                        currentPlayerId = snapshot.value as String
+                    } else if (snapshot.value == "" && status == "IN_PROGRESS") {
+                        awakenPlayersIds.clear()
+                        handleNextPlayer()
                     }
 
-                    override fun onCancelled(error: DatabaseError) {
+                }
 
-                    }
-                })
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
         }
 
         private fun checkChosenPlayer() {
             dbRef.child(lobbyId!!).child("chosenPlayer").addValueEventListener(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        Log.i(
-                            "GAME_FLOW", "Chosen player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
-                        )
-                        chosenPlayerId = snapshot.value as String
-                        if (chosenPlayerId != "") handleChoice()
-                    }
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i(
+                        "GAME_FLOW", "Chosen player is ${listOfPlayers.find { it.id == snapshot.value }?.name}!"
+                    )
+                    chosenPlayerId = snapshot.value as String
+                    if (chosenPlayerId != "") handleChoice()
+                }
 
-                    override fun onCancelled(error: DatabaseError) {
+                override fun onCancelled(error: DatabaseError) {
 
-                    }
-                })
+                }
+            })
         }
 
         private fun checkVotesGiven() {
@@ -551,7 +615,7 @@ class GameFlow {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     Log.i("GAME_FLOW", "${snapshot.value} players already voted")
                     if (snapshot.value.toString().toInt() == listOfPlayers.size) {
-                        Handler(Looper.getMainLooper()).postDelayed({checkVotingResults()}, 1000)
+                        Handler(Looper.getMainLooper()).postDelayed({ checkVotingResults() }, 1000)
                     }
                 }
 

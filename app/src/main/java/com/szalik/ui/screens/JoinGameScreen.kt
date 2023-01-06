@@ -143,6 +143,7 @@ fun JoinGameScreen(navController: NavController) {
                                                 "Nie znaleziono gry dla podanego kodu",
                                                 Toast.LENGTH_LONG
                                             ).show()
+                                            break@loop
                                         }
                                     }
                                 }

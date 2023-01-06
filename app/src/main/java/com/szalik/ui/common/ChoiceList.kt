@@ -14,16 +14,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
+import com.szalik.logic.entertainment.enums.Fraction
 import com.szalik.logic.entertainment.enums.Role
 import com.szalik.logic.entertainment.enums.VotingMode
 import com.szalik.ui.screens.dbRef
 
 @Composable
-fun ChoiceList(mode: VotingMode? = null) {
+fun ChoiceList(mode: VotingMode? = null, fraction: Fraction? = null) {
     val dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
     var filteredList = GameFlow.listOfPlayers.filter { it.id != GameFlow.thisPlayerId }
     if (GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }?.card?.role == Role.BODYGUARD && GameFlow.isNight) {
         filteredList = filteredList.filter { it.id != GameFlow.lastProtectedPlayerId }
+    }
+
+    if (fraction != null) {
+        filteredList = GameFlow.listOfPlayers.filter { it.card?.role?.fraction == fraction }
     }
 
     LazyColumn {

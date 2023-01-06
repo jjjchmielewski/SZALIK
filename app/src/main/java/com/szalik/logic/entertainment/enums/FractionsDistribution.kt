@@ -29,8 +29,8 @@ enum class FractionsDistribution(
     TWENTY_FIVE(25, 10, 5, 6, 4),
     TWENTY_SIX(26, 11, 5, 6, 4),
     TWENTY_SEVEN(27, 11, 5, 7, 4),
-    TWENTY_EIGHT(28, 12, 5, 7, 4),
-    TWENTY_NINE(29, 12, 5, 7, 5),
+    TWENTY_EIGHT(28, 11, 6, 7, 4),
+    TWENTY_NINE(29, 11, 6, 7, 5),
     THIRTY(30, 12, 6, 7, 5);
 
     companion object {

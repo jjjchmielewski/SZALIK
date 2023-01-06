@@ -72,6 +72,9 @@ class RoleActionHandler {
                         "Chronisz wybraną osobę"
                     }
                 }
+                Role.TAXMAN -> {
+                    "Osoba posiadająca posążek to:"
+                }
                 Role.WARLORD -> {
                     if (GameFlow.showChoiceList) {
                         if (GameFlow.listOfPlayers.find { it.id == GameFlow.playerWithTotemId }?.card?.role?.fraction == Fraction.BANDITS) {
@@ -157,14 +160,6 @@ class RoleActionHandler {
                 Role.BINOCULARS_EYE -> {
                     "Osoba posiadająca posążek to:"
                 }
-                Role.SHAMANESS -> {
-                    if (GameFlow.showChoiceList) {
-                        "Wybierz osobę którą chcesz otruć"
-                    } else {
-                        GameFlow.showConfirmButton = true
-                        "Wybrana osoba została otruta"
-                    }
-                }
                 Role.LONELY_COYOTE -> {
                     if (GameFlow.showChoiceList) {
                         "Wybierz bladą twarz do zabicia"
@@ -200,14 +195,14 @@ class RoleActionHandler {
                 Role.GREAT_ALIEN -> {
                     if (GameFlow.showChoiceList) {
                         if (GameFlow.listOfPlayers.find { it.id == GameFlow.playerWithTotemId }?.card?.role?.fraction == Fraction.ALIENS) {
-                            "Naradź się z innymi Kosmitami i wskaż kto ma przechować tej nocy posążek"
+                            "Nadajecie ${GameFlow.aliensSignalCounter} sygnał na swoją planetę! Naradź się z innymi Kosmitami i wskaż kto ma przechować tej nocy posążek"
                         } else {
                             "Naradź się z innymi Kosmitami i wskaż ziemianina do przeszukania"
                         }
                     } else {
                         GameFlow.showConfirmButton = true
                         if (GameFlow.thisPlayerId == GameFlow.playerWithTotemId) {
-                            "Udaje ci się zdobyć posążek!"
+                            "Udaje ci się zdobyć posążek! Nadajecie ${GameFlow.aliensSignalCounter} sygnał na swoją planetę!"
                         } else {
                             "Wybrany ziemianin nie miał przy sobie posążka"
                         }

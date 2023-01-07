@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.common.RoleActionHandler
@@ -56,10 +57,10 @@ fun CardScreen() {
     SzalikTheme {
         if (GameFlow.listOfPlayers.none { it.id == GameFlow.thisPlayerId }) {
             Surface(
-                modifier = Modifier.fillMaxSize(), color = Color(0xFF5A5A5A)
+                modifier = Modifier.fillMaxSize(), color = Color(0xFF812020)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().padding(20.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -68,8 +69,8 @@ fun CardScreen() {
                         textAlign = TextAlign.Center,
                         fontSize = 40.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF3A3A3A),
-                        modifier = Modifier.fillMaxSize()
+                        color = Color(0xFFBBB9B9),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 
@@ -78,10 +79,10 @@ fun CardScreen() {
             if (GameFlow.status == "IN_PROGRESS" && !GameFlow.awakenPlayersIds.contains(GameFlow.thisPlayerId)) {
                 //GRACZ ŚPI
                 Surface(
-                    modifier = Modifier.fillMaxSize(), color = Color(0xFF3F51B5)
+                    modifier = Modifier.fillMaxSize(), color = Color(0xFF32408F)
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().padding(20.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -90,8 +91,8 @@ fun CardScreen() {
                             textAlign = TextAlign.Center,
                             fontSize = 40.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF3A3A3A),
-                            modifier = Modifier.fillMaxSize()
+                            color = Color(0xFFACABAB),
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
@@ -105,8 +106,8 @@ fun CardScreen() {
                         if (GameFlow.showActionQuestion) {
                             //PYTANIE O CHĘĆ UŻYCIA AKCJI
                             Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Top,
+                                modifier = Modifier.fillMaxSize().padding(20.dp),
+                                verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
@@ -115,6 +116,7 @@ fun CardScreen() {
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Medium
                                 )
+                                Spacer(modifier = Modifier.height(20.dp))
                                 Row(Modifier.fillMaxWidth()) {
                                     Button(onClick = {
                                         GameFlow.showActionQuestion = false
@@ -123,14 +125,27 @@ fun CardScreen() {
                                         else
                                             GameFlow.showChoiceList = true
                                     }) {
-                                        Text(text = "TAK")
+                                        Text(
+                                            text = "TAK",
+                                            fontSize = 30.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colors.onPrimary,
+                                            textAlign = TextAlign.Center
+                                        )
                                     }
+                                    Spacer(modifier = Modifier.width(20.dp))
                                     Button(onClick = {
                                         GameFlow.showActionQuestion = false
                                         dbRef.child(GameFlow.getLobbyId()).child("currentPlayer")
                                             .setValue("")
                                     }) {
-                                        Text(text = "NIE")
+                                        Text(
+                                            text = "NIE",
+                                            fontSize = 30.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colors.onPrimary,
+                                            textAlign = TextAlign.Center
+                                        )
                                     }
                                 }
                             }
@@ -139,8 +154,8 @@ fun CardScreen() {
                             val text = RoleActionHandler.handle()
 
                             Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Top,
+                                modifier = Modifier.fillMaxSize().padding(20.dp),
+                                verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Row(
@@ -150,9 +165,11 @@ fun CardScreen() {
                                         text = text,
                                         textAlign = TextAlign.Center,
                                         fontSize = 30.sp,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
+                                Spacer(modifier = Modifier.height(20.dp))
                                 if (GameFlow.showChoiceList) {
                                     if (text.contains("Naradź się z innymi Kosmitami i wskaż kto ma przechować tej nocy posążek")) {
                                         ChoiceList(fraction = Fraction.ALIENS)
@@ -180,8 +197,9 @@ fun CardScreen() {
                                                 Text(
                                                     text = player.card!!.role!!.fraction.polishName,
                                                     textAlign = TextAlign.Center,
-                                                    fontSize = 20.sp,
-                                                    fontWeight = FontWeight.Medium
+                                                    fontSize = 40.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    modifier = Modifier.fillMaxWidth()
                                                 )
                                             }
                                         } else {
@@ -192,9 +210,11 @@ fun CardScreen() {
                                                     text = player.card!!.role!!.polishName,
                                                     textAlign = TextAlign.Center,
                                                     fontSize = 30.sp,
-                                                    fontWeight = FontWeight.SemiBold
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    modifier = Modifier.fillMaxWidth()
                                                 )
                                             }
+                                            Spacer(modifier = Modifier.height(10.dp))
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
@@ -203,29 +223,38 @@ fun CardScreen() {
                                                 Text(
                                                     text = "Frakcja: ${player.card!!.role!!.fraction.polishName}",
                                                     textAlign = TextAlign.Center,
-                                                    fontSize = 20.sp,
-                                                    fontWeight = FontWeight.Medium
+                                                    fontSize = 30.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    modifier = Modifier.fillMaxWidth()
                                                 )
                                             }
+                                            Spacer(modifier = Modifier.height(10.dp))
                                             Row(
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
                                                 Text(
                                                     text = player.card!!.role!!.description,
-                                                    textAlign = TextAlign.Center,
-                                                    fontSize = 16.sp,
-                                                    fontWeight = FontWeight.Normal
+                                                    textAlign = TextAlign.Justify,
+                                                    fontSize = 20.sp,
+                                                    fontWeight = FontWeight.Normal,
+                                                    modifier = Modifier.fillMaxWidth()
                                                 )
                                             }
                                         }
                                     }
-
+                                    Spacer(modifier = Modifier.height(20.dp))
                                     Button(onClick = {
                                         dbRef.child(GameFlow.getLobbyId()).child("currentPlayer")
                                             .setValue("")
                                         GameFlow.showIdentity = false
                                     }) {
-                                        Text(text = "Kontynuuj grę")
+                                        Text(
+                                            text = "Kontynuuj grę",
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colors.onPrimary,
+                                            textAlign = TextAlign.Center
+                                        )
                                     }
                                 } else if (GameFlow.showTotemLocation) {
                                     val player =
@@ -236,16 +265,24 @@ fun CardScreen() {
                                         Text(
                                             text = player!!.name,
                                             textAlign = TextAlign.Center,
-                                            fontSize = 30.sp,
-                                            fontWeight = FontWeight.Medium
+                                            fontSize = 40.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
+                                    Spacer(modifier = Modifier.height(20.dp))
                                     Button(onClick = {
                                         dbRef.child(GameFlow.getLobbyId()).child("currentPlayer")
                                             .setValue("")
                                         GameFlow.showTotemLocation = false
                                     }) {
-                                        Text(text = "Kontynuuj grę")
+                                        Text(
+                                            text = "Kontynuuj grę",
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colors.onPrimary,
+                                            textAlign = TextAlign.Center
+                                        )
                                     }
                                 } else if (GameFlow.showConfirmButton) {
                                     Button(onClick = {
@@ -272,7 +309,13 @@ fun CardScreen() {
                                                 .setValue("")
                                         }
                                     }) {
-                                        Text(text = "Kontynuuj grę")
+                                        Text(
+                                            text = "Kontynuuj grę",
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colors.onPrimary,
+                                            textAlign = TextAlign.Center
+                                        )
                                     }
                                 }
                             }
@@ -280,8 +323,8 @@ fun CardScreen() {
                     } else {
                         //ODLICZANIE DO STARTU GRY
                         Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Top,
+                            modifier = Modifier.fillMaxSize().padding(20.dp),
+                            verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             if (GameFlow.status == "STARTED") {
@@ -289,6 +332,7 @@ fun CardScreen() {
                                     totalTime = if (GameFlow.testMode) 5000 else 60000,
                                     mode = MeetingMode.ENTERTAINMENT
                                 )
+                                Spacer(modifier = Modifier.height(30.dp))
                             }
                             GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }
                                 ?.let { player ->
@@ -304,13 +348,14 @@ fun CardScreen() {
                 modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().padding(20.dp),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (GameFlow.showDuelChoiceList) {
                         dbRef.child(GameFlow.getLobbyId()).child("dueledPlayer").setValue("")
                         dbRef.child(GameFlow.getLobbyId()).child("duelingPlayer").setValue("")
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = "Kogo chcesz wyzwać na pojedynek?",
                             textAlign = TextAlign.Center,
@@ -318,10 +363,12 @@ fun CardScreen() {
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(20.dp))
                         ChoiceList(VotingMode.DUEL)
 
                     } else if (GameFlow.showSearchChoiceList) {
                         dbRef.child(GameFlow.getLobbyId()).child("playerToSearch").setValue("")
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = "Kogo chcesz zgłosić do przeszukania?",
                             textAlign = TextAlign.Center,
@@ -329,6 +376,7 @@ fun CardScreen() {
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(20.dp))
                         ChoiceList(VotingMode.SEARCH)
 
                     } else if (GameFlow.showVoting) {
@@ -458,13 +506,15 @@ fun CardScreen() {
                             text = ""
                             function = {}
                         }
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = text,
                             textAlign = TextAlign.Center,
-                            fontSize = 24.sp,
+                            fontSize = 26.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(30.dp))
                         Button(onClick = {
                             function.invoke()
                             dbRef.child(GameFlow.getLobbyId()).child("voted").setValue(0)
@@ -480,6 +530,7 @@ fun CardScreen() {
                         }
 
                     } else if (GameFlow.showEliminated && GameFlow.eliminatedPlayers.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = "Wyeliminowano gracza:",
                             textAlign = TextAlign.Center,
@@ -496,6 +547,7 @@ fun CardScreen() {
                                 Fraction.INDIANS -> Color(0xFF680609)
                                 Fraction.ALIENS -> Color(0xFF045A01)
                             }
+                            Spacer(modifier = Modifier.height(20.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -507,17 +559,19 @@ fun CardScreen() {
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
+                            Spacer(modifier = Modifier.height(20.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     text = "Rola: ${player.card!!.role!!.polishName}",
                                     textAlign = TextAlign.Center,
-                                    fontSize = 20.sp,
+                                    fontSize = 26.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
+                            Spacer(modifier = Modifier.height(20.dp))
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -526,11 +580,12 @@ fun CardScreen() {
                                 Text(
                                     text = "Frakcja: ${player.card!!.role!!.fraction.polishName}",
                                     textAlign = TextAlign.Center,
-                                    fontSize = 20.sp,
+                                    fontSize = 26.sp,
                                     fontWeight = FontWeight.Medium,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
+                            Spacer(modifier = Modifier.height(40.dp))
                             Button(onClick = {
                                 GameFlow.listOfPlayers.remove(GameFlow.listOfPlayers.find { it.id == GameFlow.eliminatedPlayers.first() })
                                 GameFlow.eliminatedPlayers.removeFirst()
@@ -541,53 +596,74 @@ fun CardScreen() {
                                 Text(
                                     text = "Kontynuuj",
                                     textAlign = TextAlign.Center,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Medium,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
                     } else if (GameFlow.winners != null) {
-                        val text = when (GameFlow.winners) {
+                        val text: String
+                        val color: Color
+                        when (GameFlow.winners) {
                             Fraction.CITY -> {
-                                "Miastowi zdobyli posążek!"
+                                text = "Miastowi zdobyli posążek!"
+                                color = Color(0xFF8D7705)
                             }
                             Fraction.BANDITS -> {
-                                "Bandyci odpływają razem z posążkiem na aukcję antyków!"
+                                text = "Bandyci odpływają razem z posążkiem na aukcję antyków!"
+                                color = Color(0xFF6D6C6B)
                             }
                             Fraction.INDIANS -> {
-                                "Indianie zabili wszystkie blade twarze!"
+                                text = "Indianie zabili wszystkie blade twarze!"
+                                color = Color(0xFF680609)
                             }
                             Fraction.ALIENS -> {
-                                "Kosmici odlatują na swoją planetę!"
+                                text = "Kosmici odlatują na swoją planetę!"
+                                color = Color(0xFF045A01)
                             }
                             else -> {
-                                ""
+                                text = ""
+                                color = Color.Black
                             }
                         }
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                text = "KONIEC GRY",
-                                textAlign = TextAlign.Center,
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                text = text,
-                                textAlign = TextAlign.Center,
-                                fontSize = 30.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                        Surface(
+                            color = color,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = "KONIEC GRY",
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 40.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(40.dp))
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = text,
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 30.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
                         }
                     } else {
                         if ((GameFlow.listOfPlayers.size >= 16 && GameFlow.searchCounter == 3) || (GameFlow.listOfPlayers.size < 16 && GameFlow.searchCounter == 2)) {
                             dbRef.child(GameFlow.getLobbyId()).child("tts").setValue("Zapada noc, wszyscy idą spać.")
                             GameFlow.night()
                         }
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = "Dzień ${GameFlow.dayNumber}",
                             textAlign = TextAlign.Center,
@@ -595,11 +671,13 @@ fun CardScreen() {
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(20.dp))
                         if (showCard) {
                             GameFlow.listOfPlayers.find { it.id == GameFlow.thisPlayerId }
                                 ?.let { player ->
                                     RoleView(player = player)
                                 }
+                            Spacer(modifier = Modifier.height(40.dp))
                         }
                         Button(onClick = {
                             showCard = !showCard
@@ -607,33 +685,31 @@ fun CardScreen() {
                             Text(
                                 text = if (showCard) "Ukryj szczegóły karty" else "Pokaż szczegóły karty",
                                 textAlign = TextAlign.Center,
-                                fontSize = 20.sp,
+                                fontSize = 26.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Button(onClick = {
-                                GameFlow.showDuelChoiceList = true
-                            }) {
-                                Text(
-                                    text = "Pojedynek",
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                            Button(onClick = {
-                                GameFlow.showSearchChoiceList = true
-                            }) {
-                                Text(
-                                    text = "Przeszukanie",
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                        Spacer(modifier = Modifier.height(40.dp))
+                        Button(onClick = {
+                            GameFlow.showDuelChoiceList = true
+                        }) {
+                            Text(
+                                text = "Pojedynek",
+                                textAlign = TextAlign.Center,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Button(onClick = {
+                            GameFlow.showSearchChoiceList = true
+                        }) {
+                            Text(
+                                text = "Przeszukanie",
+                                textAlign = TextAlign.Center,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }

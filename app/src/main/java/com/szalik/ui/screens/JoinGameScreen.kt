@@ -1,6 +1,6 @@
 package com.szalik.ui.screens
 
-import android.speech.tts.TextToSpeech
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -8,19 +8,21 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.szalik.logic.common.TTSEngine
-import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.Player
+import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.ui.theme.SzalikTheme
 
 @Composable
@@ -71,9 +73,7 @@ fun JoinGameScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colors.background
         ) {
-            Column(Modifier.fillMaxSize(), Arrangement.Top) {
-                Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-
+            Column(Modifier.fillMaxSize(), Arrangement.Center) {
                 TextField(
                     value = gameId,
                     placeholder = {
@@ -104,7 +104,7 @@ fun JoinGameScreen(navController: NavController) {
                         .align(Alignment.CenterHorizontally)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
                     onClick = {
@@ -169,9 +169,10 @@ fun JoinGameScreen(navController: NavController) {
                 ) {
                     Text(
                         text = "Dołącz do gry",
-                        color = Color.Black,
-                        fontSize = 15.sp,
-                        modifier = Modifier.padding(5.dp)
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colors.onPrimary,
+                        textAlign = TextAlign.Center
                     )
                 }
             }

@@ -1,10 +1,12 @@
 package com.szalik.ui.common
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -17,7 +19,6 @@ import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.enums.Fraction
 import com.szalik.logic.entertainment.enums.Role
 import com.szalik.logic.entertainment.enums.VotingMode
-import com.szalik.ui.screens.dbRef
 
 @Composable
 fun ChoiceList(mode: VotingMode? = null, fraction: Fraction? = null) {
@@ -39,7 +40,8 @@ fun ChoiceList(mode: VotingMode? = null, fraction: Fraction? = null) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp)
+                    .padding(vertical = 5.dp)
+                    .border(4.dp, MaterialTheme.colors.onPrimary)
                     .clickable {
                         when (mode) {
                             VotingMode.HANG -> {

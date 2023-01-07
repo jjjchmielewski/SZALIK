@@ -360,11 +360,13 @@ class GameFlow {
                     }
                 }
                 Role.SHERIFF -> {
-                    dbRef.child(lobbyId!!).child("tts").setValue("Szeryf zamyka w areszcie wybraną osobę.")
                     listOfPlayers.find { it.id == chosenPlayerId }.let {
                         it?.card?.isJailed = true
                         if (it?.card?.hasTotem == true) {
                             passTotemTo(Role.SHERIFF)
+                            dbRef.child(lobbyId!!).child("tts").setValue("Szeryf zamyka w areszcie wybraną osobę i przejmuje posążek.")
+                        } else {
+                            dbRef.child(lobbyId!!).child("tts").setValue("Szeryf zamyka w areszcie wybraną osobę.")
                         }
                     }
                     if (chosenPlayerId == thisPlayerId) {

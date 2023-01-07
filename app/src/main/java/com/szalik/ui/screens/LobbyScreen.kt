@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -52,7 +53,12 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
 
                     for(player in players) {
                         Row(Modifier.fillMaxWidth()) {
-                            Text(text = player.name, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                            Text(
+                                text = player.name,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                fontSize = 20.sp
+                            )
                         }
                     }
                 }
@@ -69,7 +75,13 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
                         },
                         Modifier.padding(10.dp)
                     ) {
-                        Text("Rozpocznij grę")
+                        Text(
+                            text = "Rozpocznij grę",
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colors.onPrimary,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 } else {
                     if (status == "STARTED" && !GameFlow.playerInGame) {
@@ -79,9 +91,10 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
                     } else {
                         Text(
                             text = "Oczekiwanie na rozpoczęcie gry",
-                            color = Color.DarkGray,
+                            color = MaterialTheme.colors.onPrimary,
                             fontSize = 24.sp,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(10.dp)
                         )
                     }
 
@@ -90,4 +103,3 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
         }
     }
 }
-

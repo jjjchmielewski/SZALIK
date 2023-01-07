@@ -6,9 +6,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.szalik.ui.BusinessScreen
-import com.szalik.ui.GameScreen
-import com.szalik.ui.MainScreen
+import com.szalik.ui.screens.BusinessScreen
+import com.szalik.ui.screens.GameScreen
+import com.szalik.ui.screens.MainScreen
 import com.szalik.ui.screens.*
 
 @Composable

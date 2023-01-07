@@ -2,7 +2,9 @@ package com.szalik.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple200 = Color(0xFFBB86FC)
-val Purple500 = Color(0xFF6200EE)
-val Purple700 = Color(0xFF3700B3)
-val Teal200 = Color(0xFF03DAC5)
+val BackgroundLight = Color(0xFFFFFFFF)
+val BackgroundDark = Color(0xFF585858)
+val ButtonLight = Color(0xFF0D8B79)
+val ButtonDark = Color(0xFF098D6E)
+val ButtonVariantLight = Color(0xFF4CACBD)
+val ButtonVariantDark = Color(0xFF057AAA)

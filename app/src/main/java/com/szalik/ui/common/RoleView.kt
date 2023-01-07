@@ -2,7 +2,9 @@ package com.szalik.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -10,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.Player
@@ -40,6 +43,7 @@ fun RoleView(player: Player) {
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -51,6 +55,7 @@ fun RoleView(player: Player) {
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -64,18 +69,19 @@ fun RoleView(player: Player) {
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        Spacer(modifier = Modifier.height(20.dp))
         Button(onClick = {
             expose = false
         }) {
             Text(
                 text = "Kontynuuj",
                 textAlign = TextAlign.Center,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.fillMaxWidth()
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Normal
             )
         }
     } else {
+        Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -87,6 +93,7 @@ fun RoleView(player: Player) {
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -100,70 +107,76 @@ fun RoleView(player: Player) {
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = player.card!!.role!!.description,
-                textAlign = TextAlign.Center,
-                fontSize = 16.sp,
+                textAlign = TextAlign.Justify,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Normal,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         if (player.card?.actionsLeftCounter != 999) {
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Masz jeszcze ${player.card?.actionsLeftCounter} akcji do wykorzystania",
                     textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
         if (player.card?.hasTotem == true) {
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Posiadasz posążek!",
                     textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
         if (player.card?.isBlackmailed == true) {
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Jesteś szantażowany przez ${GameFlow.listOfPlayers.find { it.card?.role == Role.BLACKMAILER }?.name}",
                     textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
         if (player.card?.isSeduced == true) {
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Zostałeś uwiedziony przez ${GameFlow.listOfPlayers.find { it.card?.role == Role.SEDUCER }?.name}",
                     textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         }
         if (player.card?.isJailed == true) {
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -177,6 +190,7 @@ fun RoleView(player: Player) {
             }
         }
         if (player.card?.role == Role.INSURANCE_AGENT && player.card?.actionsLeftCounter!! > 0) {
+            Spacer(modifier = Modifier.height(20.dp))
             Button(onClick = {
                 expose = true
                 player.card?.actionsLeftCounter = 0

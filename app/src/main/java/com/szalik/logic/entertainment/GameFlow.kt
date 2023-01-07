@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.szalik.logic.common.VibrateEngine
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.cards.GameCard
 import com.szalik.logic.entertainment.enums.Fraction
@@ -150,7 +151,7 @@ class GameFlow {
             rolesQueue.add(Role.PURPLE_SUCTION)
             isNight = true
             searchCounter = 0
-            handleNextPlayer()
+            Handler(Looper.getMainLooper()).postDelayed({ handleNextPlayer() }, 5000)
         }
 
         private fun day() {
@@ -346,11 +347,17 @@ class GameFlow {
                     dbRef.child(lobbyId!!).child("tts").setValue("Kokietka zapoznaje się z wybraną osobą i dowiaduje się jaką ma rolę.")
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                     awakenPlayersIds.add(chosenPlayerId)
+                    if (chosenPlayerId == thisPlayerId) {
+                        VibrateEngine.vibrate()
+                    }
                 }
                 Role.SEDUCER -> {
                     dbRef.child(lobbyId!!).child("tts").setValue("Uwodziciel zapoznaje się z wybraną osobą, która nie będzie się mu sprzeciwiać a jej decyzje będą zależne od uwodziciela.")
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isSeduced = true
                     awakenPlayersIds.add(chosenPlayerId)
+                    if (chosenPlayerId == thisPlayerId) {
+                        VibrateEngine.vibrate()
+                    }
                 }
                 Role.SHERIFF -> {
                     dbRef.child(lobbyId!!).child("tts").setValue("Szeryf zamyka w areszcie wybraną osobę.")
@@ -359,6 +366,9 @@ class GameFlow {
                         if (it?.card?.hasTotem == true) {
                             passTotemTo(Role.SHERIFF)
                         }
+                    }
+                    if (chosenPlayerId == thisPlayerId) {
+                        VibrateEngine.vibrate()
                     }
                 }
                 Role.PRIEST -> {
@@ -371,6 +381,9 @@ class GameFlow {
                 Role.DRUNKARD -> {
                     dbRef.child(lobbyId!!).child("tts").setValue("Opój upija wybraną osobę.")
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isDrunk = true
+                    if (chosenPlayerId == thisPlayerId) {
+                        VibrateEngine.vibrate()
+                    }
                 }
                 Role.BODYGUARD -> {
                     dbRef.child(lobbyId!!).child("tts").setValue("Ochroniarz wybrał osobę, którą będzię tej nocy chronił.")
@@ -404,6 +417,9 @@ class GameFlow {
                 }
                 Role.GAMBLER -> {
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isPlaying = true
+                    if (chosenPlayerId == thisPlayerId) {
+                        VibrateEngine.vibrate()
+                    }
                     if (listOfPlayers.find { it.id == chosenPlayerId }?.card?.hasTotem == true) {
                         dbRef.child(lobbyId!!).child("tts").setValue("Szuler wygrywa posążek grając w karty z wybraną osobą.")
                         passTotemTo(Role.GAMBLER)
@@ -415,6 +431,9 @@ class GameFlow {
                     dbRef.child(lobbyId!!).child("tts").setValue("Szantażysta zapoznaje się z wybraną osobą. Nie będzie się mu ona sprzeciwiała, a jej decyzje będą zależne od niego.")
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isBlackmailed = true
                     awakenPlayersIds.add(chosenPlayerId)
+                    if (chosenPlayerId == thisPlayerId) {
+                        VibrateEngine.vibrate()
+                    }
                 }
                 Role.CHIEF -> {
                     if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.INDIANS && indiansKillCounter == 0) {
@@ -582,6 +601,9 @@ class GameFlow {
                 }
                 removeBlackmailerSeducerEffect(chosenPlayer.card?.role!!)
                 showEliminated = true
+                if (preyId == thisPlayerId) {
+                    VibrateEngine.vibrate()
+                }
             }
             dbRef.child(lobbyId!!).child("tts").setValue(voiceMessage)
         }

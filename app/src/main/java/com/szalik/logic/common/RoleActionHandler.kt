@@ -52,7 +52,7 @@ class RoleActionHandler {
                         if (GameFlow.thisPlayerId == GameFlow.playerWithTotemId) {
                             "Zabita osoba miała przy sobie posążek, teraz jest twój!"
                         } else {
-                            "Wybrana osoba została zabita"
+                            "Wybrałeś osobę do zabicia"
                         }
                     }
                 }
@@ -137,11 +137,11 @@ class RoleActionHandler {
                         if (GameFlow.listOfPlayers.find { it.id == GameFlow.playerWithTotemId }?.card?.role?.fraction == Fraction.INDIANS && GameFlow.indiansKillCounter == 2) {
                             "Posążek przekazany"
                         } else if (GameFlow.listOfPlayers.find { it.id == GameFlow.playerWithTotemId }?.card?.role?.fraction != Fraction.INDIANS && GameFlow.indiansKillCounter == 1) {
-                            "Blada twarz została zabita"
+                            "Wybrałeś osobę do zabicia"
                         } else if (GameFlow.listOfPlayers.find { it.id == GameFlow.playerWithTotemId }?.card?.role?.fraction == Fraction.INDIANS && GameFlow.indiansKillCounter == 1) {
                             "Zabita blada twarz miała przy sobie posążek, przejmujesz go!"
                         } else {
-                            "Blada twarz została zabita"
+                            "Wybrałeś osobę do zabicia"
                         }
                     }
                 }

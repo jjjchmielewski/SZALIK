@@ -1,5 +1,6 @@
 package com.szalik.ui.screens
 
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,11 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.common.RoleActionHandler
+import com.szalik.logic.common.TTSEngine
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.enums.Fraction
@@ -28,13 +31,27 @@ import com.szalik.ui.theme.SzalikTheme
 @Composable
 fun CardScreen() {
     KeepScreenOn()
+    val context = LocalContext.current
     val dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
+
+    var initTTS by remember {
+        mutableStateOf(false)
+    }
 
     var showCard by remember {
         mutableStateOf(false)
     }
 
     Log.i("CARD_SCREEN", "Recomposing...")
+    if (!initTTS) {
+        TTSEngine.getTTS(context)
+        initTTS = true
+    }
+
+    if (GameFlow.ttsMessage != null) {
+        TTSEngine.getTTS(context).speak(GameFlow.ttsMessage, TextToSpeech.QUEUE_FLUSH, null, "")
+        GameFlow.ttsMessage = null
+    }
 
     SzalikTheme {
         if (GameFlow.listOfPlayers.none { it.id == GameFlow.thisPlayerId }) {
@@ -568,6 +585,7 @@ fun CardScreen() {
                         }
                     } else {
                         if ((GameFlow.listOfPlayers.size >= 16 && GameFlow.searchCounter == 3) || (GameFlow.listOfPlayers.size < 16 && GameFlow.searchCounter == 2)) {
+                            dbRef.child(GameFlow.getLobbyId()).child("tts").setValue("Zapada noc, wszyscy idą spać.")
                             GameFlow.night()
                         }
                         Text(

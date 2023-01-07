@@ -27,6 +27,7 @@ class GameFlow {
         var thisPlayerId: String? = null
         var playerInGame = false
         var winners by mutableStateOf<Fraction?>(null)
+        var ttsMessage by mutableStateOf<String?>(null)
 
         var status by mutableStateOf("")
         var currentPlayerId by mutableStateOf("")
@@ -71,6 +72,7 @@ class GameFlow {
             dbRef.child(lobbyId!!).child("playerToSearch").setValue("")
             dbRef.child(lobbyId!!).child("dueledPlayer").setValue("")
             dbRef.child(lobbyId!!).child("duelingPlayer").setValue("")
+            checkTTS()
             checkVotesGiven()
             checkPlayerToSearch()
             checkDueledPlayer()
@@ -84,6 +86,7 @@ class GameFlow {
         }
 
         fun prepareGameByGuest() {
+            checkTTS()
             checkVotesGiven()
             checkPlayerToSearch()
             checkDueledPlayer()
@@ -95,7 +98,10 @@ class GameFlow {
 
         fun startGame() {
             Log.i("GAME_FLOW", "Starting game")
-            if (isHost) dbRef.child(lobbyId!!).child("state").setValue("IN_PROGRESS")
+            if (isHost) {
+                dbRef.child(lobbyId!!).child("tts").setValue("Zapada noc, wszyscy gracze zasypiają")
+                dbRef.child(lobbyId!!).child("state").setValue("IN_PROGRESS")
+            }
         }
 
         fun setLobbyId(lobbyId: String): Boolean {
@@ -181,6 +187,7 @@ class GameFlow {
             rolesQueue.forEach {
                 Log.i("ROLES_QUEUE", it.name)
             }
+            var wakeUpMessage = ""
             showActionQuestion = false
             actionTakeover = null
             if (rolesQueue.isNotEmpty()) {
@@ -262,9 +269,17 @@ class GameFlow {
                                         it.forEach { player ->
                                             awakenPlayersIds.add(player.id)
                                         }
+                                        if (nextPlayer?.card?.role == Role.WARLORD || actionTakeover == Role.WARLORD) {
+                                            wakeUpMessage = if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.BANDITS) {
+                                                "Budzą się wszyscy bandyci. Decydują kto z nich ma tej nocy przechować posążek."
+                                            } else {
+                                                "Budzą się wszyscy bandyci. Decydują kogo tej nocy przeszukać."
+                                            }
+                                        }
                                     }
                             } else {
                                 awakenPlayersIds.add(nextPlayer!!.id)
+                                wakeUpMessage = "Budzi się Szantażysta."
                             }
                         }
 
@@ -273,6 +288,13 @@ class GameFlow {
                                 .let {
                                     it.forEach { player ->
                                         awakenPlayersIds.add(player.id)
+                                    }
+                                    if (nextPlayer?.card?.role == Role.CHIEF || actionTakeover == Role.CHIEF) {
+                                        wakeUpMessage = if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.INDIANS) {
+                                            "Budzą się wszyscy indianie. Decydują kto z nich ma tej nocy przechować posążek."
+                                        } else {
+                                            "Budzą się wszyscy indianie. Decydują kogo tej nocy chcą zabić."
+                                        }
                                     }
                                 }
                         }
@@ -283,13 +305,24 @@ class GameFlow {
                                     it.forEach { player ->
                                         awakenPlayersIds.add(player.id)
                                     }
+                                    if (nextPlayer?.card?.role == Role.GREAT_ALIEN || actionTakeover == Role.GREAT_ALIEN) {
+                                        wakeUpMessage = if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.BANDITS) {
+                                            "Budzą się wszyscy kosmici. Nadają sygnał na swoją planetę i decydują kto z nich ma tej nocy przechować posążek."
+                                        } else {
+                                            "Budzą się wszyscy kosmici. Decydują kogo tej nocy przeszukać."
+                                        }
+                                    }
                                 }
                         }
 
-                        else -> awakenPlayersIds.add(nextPlayer!!.id)
+                        else -> {
+                            awakenPlayersIds.add(nextPlayer!!.id)
+                            wakeUpMessage = "Budzi się ${nextPlayer?.card?.role?.polishName}"
+                        }
                     }
                     rolesQueue.removeFirst()
                     dbRef.child(lobbyId!!).child("currentPlayer").setValue(nextPlayer!!.id)
+                    dbRef.child(lobbyId!!).child("tts").setValue(wakeUpMessage)
                 } else {
                     rolesQueue.removeFirst()
                     handleNextPlayer()
@@ -298,6 +331,7 @@ class GameFlow {
                 dayNumber++
                 Log.i("GAME_FLOW", "Morning no. $dayNumber")
                 isNight = false
+                dbRef.child(lobbyId!!).child("tts").setValue("Nastał dzień, wszyscy się budzą.")
                 day()
             }
         }
@@ -309,14 +343,17 @@ class GameFlow {
             var voiceMessage = ""
             when (if (actionTakeover != null) actionTakeover else listOfPlayers.find { it.id == currentPlayerId }?.card?.role) {
                 Role.COQUETTE -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Kokietka zapoznaje się z wybraną osobą i dowiaduje się jaką ma rolę.")
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                     awakenPlayersIds.add(chosenPlayerId)
                 }
                 Role.SEDUCER -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Uwodziciel zapoznaje się z wybraną osobą, która nie będzie się mu sprzeciwiać a jej decyzje będą zależne od uwodziciela.")
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isSeduced = true
                     awakenPlayersIds.add(chosenPlayerId)
                 }
                 Role.SHERIFF -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Szeryf zamyka w areszcie wybraną osobę.")
                     listOfPlayers.find { it.id == chosenPlayerId }.let {
                         it?.card?.isJailed = true
                         if (it?.card?.hasTotem == true) {
@@ -325,47 +362,63 @@ class GameFlow {
                     }
                 }
                 Role.PRIEST -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Pastor poznaje frakcję spowiadanej osoby.")
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                 }
                 Role.EXECUTIONER -> {
                     eliminate(currentPlayerId, chosenPlayerId)
                 }
                 Role.DRUNKARD -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Opój upija wybraną osobę.")
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isDrunk = true
                 }
                 Role.BODYGUARD -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Ochroniarz wybrał osobę, którą będzię tej nocy chronił.")
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isProtected = true
                     lastProtectedPlayerId = chosenPlayerId
                 }
                 Role.TAXMAN -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Poborca podatkowy na podstawie zeznań podatkowych dowiaduje się kto ma posążek.")
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                 }
                 Role.WARLORD -> {
                     if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.BANDITS) {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Bandyci zdecydowali kto z nich przechowa tej nocy posążek.")
                         passTotemTo(chosenPlayerId)
                     } else {
                         if (listOfPlayers.find { it.id == chosenPlayerId }?.card?.hasTotem == true) {
+                            dbRef.child(lobbyId!!).child("tts").setValue("Bandyci przeszukują wybraną oosbę i znajdują u niej posążek!")
                             passTotemTo(currentPlayerId)
+                        } else {
+                            dbRef.child(lobbyId!!).child("tts").setValue("Bandyci przeszukują wybraną osobę - nie znajdują posążka.")
                         }
                     }
                 }
                 Role.THIEF -> {
                     if (listOfPlayers.find { it.id == chosenPlayerId }?.card?.hasTotem == true) {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Złodziejowi udaje się ukraść posążek.")
                         passTotemTo(Role.THIEF)
+                    } else {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Osoba którą próbował okraść złodziej nie miała posążka.")
                     }
                 }
                 Role.GAMBLER -> {
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isPlaying = true
                     if (listOfPlayers.find { it.id == chosenPlayerId }?.card?.hasTotem == true) {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Szuler wygrywa posążek grając w karty z wybraną osobą.")
                         passTotemTo(Role.GAMBLER)
+                    } else {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Osoba z którą grał szuler nie miała posążka.")
                     }
                 }
                 Role.BLACKMAILER -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Szantażysta zapoznaje się z wybraną osobą. Nie będzie się mu ona sprzeciwiała, a jej decyzje będą zależne od niego.")
                     listOfPlayers.find { it.id == chosenPlayerId }?.card?.isBlackmailed = true
                     awakenPlayersIds.add(chosenPlayerId)
                 }
                 Role.CHIEF -> {
                     if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.INDIANS && indiansKillCounter == 0) {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Indianie zdecydowali kto z nich przechowa posążek tej nocy.")
                         indiansKillCounter = 2
                         passTotemTo(chosenPlayerId)
                     } else if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction != Fraction.INDIANS && indiansKillCounter == 0) {
@@ -383,6 +436,7 @@ class GameFlow {
                     eliminate(currentPlayerId, chosenPlayerId)
                 }
                 Role.BINOCULARS_EYE -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Lornecie oko dowiaduje się kto ma posążek.")
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                 }
                 Role.LONELY_COYOTE -> {
@@ -392,28 +446,37 @@ class GameFlow {
                     eliminate(currentPlayerId, chosenPlayerId)
                 }
                 Role.SHAMAN -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Szaman wpada w trans i poznaje tożsamość wybranej osoby.")
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                 }
                 Role.GREAT_ALIEN -> {
                     if (listOfPlayers.find { it.id == playerWithTotemId }?.card?.role?.fraction == Fraction.ALIENS) {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Kosmici zdecydowali kto z nich przechowa posążek tej nocy.")
                         aliensSignalCounter++
                         passTotemTo(chosenPlayerId)
                     } else {
                         if (listOfPlayers.find { it.id == chosenPlayerId }?.card?.hasTotem == true) {
+                            dbRef.child(lobbyId!!).child("tts").setValue("Kosmici przeszukują wybraną oosbę i znajdują u niej posążek! Nadają sygnał na swoją planetę.")
                             aliensSignalCounter++
                             passTotemTo(currentPlayerId)
+                        } else {
+                            dbRef.child(lobbyId!!).child("tts").setValue("Kosmici przeszukują wybraną osobę - nie znajdują posążka.")
                         }
                     }
                 }
                 Role.PURPLE_SUCTION -> {
                     if (listOfPlayers.find { it.id == chosenPlayerId }?.card?.hasTotem == true) {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Purpurowa przyssawka przeszukuje wybraną osobę i przejmuje posążek!")
                         passTotemTo(Role.PURPLE_SUCTION)
+                    } else {
+                        dbRef.child(lobbyId!!).child("tts").setValue("Purpurowa przyssawka przeszukuje wybraną osobę - nie znajduje posążka.")
                     }
                 }
                 Role.GREEN_TENTACLE -> {
                     eliminate(currentPlayerId, chosenPlayerId)
                 }
                 Role.MIND_EATER -> {
+                    dbRef.child(lobbyId!!).child("tts").setValue("Pożeracz umysłów poznaje tożsamość wybranej osoby.")
                     sharedIdentity = listOfPlayers.find { it.id == chosenPlayerId }
                 }
                 else -> {}
@@ -504,17 +567,23 @@ class GameFlow {
 
         private fun eliminate(predatorId: String, preyId: String) {
             val chosenPlayer = listOfPlayers.find { it.id == preyId }
-            var voiceMessage = "Wybrana osoba nie została zabita ponieważ "
-            if (chosenPlayer!!.card!!.isJailed) voiceMessage += "jest w areszcie"
-            else if (chosenPlayer.card!!.isProtected) voiceMessage += "jest chroniona"
+            val predator = listOfPlayers.find { it.id == predatorId }
+            var voiceMessage = "${predator?.card?.role?.polishName} nie zabija wybranej osoby ponieważ "
+            if (chosenPlayer!!.card!!.isJailed) voiceMessage += "jest ona w areszcie."
+            else if (chosenPlayer.card!!.isProtected) voiceMessage += "jest ona chroniona."
             else {
                 eliminatedPlayers.add(preyId)
                 listOfPlayers.find { it.id == preyId }?.eliminated = true
-                passTotemTo(predatorId)
+                if (chosenPlayer?.card?.hasTotem == true) {
+                    passTotemTo(predatorId)
+                    voiceMessage = "${predator?.card?.role?.polishName} zabija wybraną osobę i przejmuje posążek!"
+                } else {
+                    voiceMessage = "${predator?.card?.role?.polishName} zabija wybraną osobę."
+                }
                 removeBlackmailerSeducerEffect(chosenPlayer.card?.role!!)
                 showEliminated = true
-                voiceMessage = "Wybrana osoba została zabita"
             }
+            dbRef.child(lobbyId!!).child("tts").setValue(voiceMessage)
         }
 
         fun eliminateDuringDay(preyId: String) {
@@ -535,11 +604,11 @@ class GameFlow {
         private fun removeBlackmailerSeducerEffect(role: Role) {
             if (role == Role.SEDUCER) {
                 listOfPlayers.forEach {
-                    if (it.card!!.isJailed) it.card!!.isSeduced = false
+                    if (it.card!!.isSeduced) it.card!!.isSeduced = false
                 }
             } else if (role == Role.BLACKMAILER) {
                 listOfPlayers.forEach {
-                    if (it.card!!.isJailed) it.card!!.isBlackmailed = false
+                    if (it.card!!.isBlackmailed) it.card!!.isBlackmailed = false
                 }
             }
         }
@@ -564,7 +633,7 @@ class GameFlow {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     Log.i("GAME_FLOW", "Status is ${snapshot.value}!")
                     if (snapshot.value != null) status = snapshot.value as String
-                    if (snapshot.value == "IN_PROGRESS") handleNextPlayer()
+                    if (snapshot.value == "IN_PROGRESS") Handler(Looper.getMainLooper()).postDelayed({ handleNextPlayer() }, 5000)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -583,7 +652,7 @@ class GameFlow {
                         currentPlayerId = snapshot.value as String
                     } else if (snapshot.value == "" && status == "IN_PROGRESS") {
                         awakenPlayersIds.clear()
-                        handleNextPlayer()
+                        Handler(Looper.getMainLooper()).postDelayed({ handleNextPlayer() }, 5000)
                     }
 
                 }
@@ -680,6 +749,22 @@ class GameFlow {
                     playerToSearchId = snapshot.value as String
                     if (playerToSearchId != "")
                         showVoting = true
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+        }
+
+        private fun checkTTS() {
+            dbRef.child(lobbyId!!).child("tts").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i(
+                        "GAME_FLOW", "TTS message is ${snapshot.value}!"
+                    )
+                    if (snapshot.value != null && snapshot.value != "")
+                        ttsMessage = snapshot.value as String
                 }
 
                 override fun onCancelled(error: DatabaseError) {

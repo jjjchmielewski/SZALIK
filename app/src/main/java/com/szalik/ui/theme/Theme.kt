@@ -2,7 +2,9 @@ package com.szalik.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
@@ -35,14 +37,19 @@ private val LightColorPalette = lightColors(
 
 @Composable
 fun SzalikTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    val colors = if (darkTheme) {
-        DarkColorPalette
-    } else {
-        LightColorPalette
-    }
     val activity = LocalView.current.context as Activity
-    activity.window.navigationBarColor = colors.background.toArgb()
-    activity.window.statusBarColor = colors.background.toArgb()
+    val colors: Colors
+    if (darkTheme) {
+        colors = DarkColorPalette
+        activity.window.navigationBarColor = colors.primary.toArgb()
+        activity.window.statusBarColor = colors.background.toArgb()
+    } else {
+        colors = LightColorPalette
+        activity.window.navigationBarColor = colors.primary.toArgb()
+        activity.window.statusBarColor = colors.background.toArgb()
+    }
+
+
 
 
     MaterialTheme(

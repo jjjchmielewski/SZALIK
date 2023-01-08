@@ -11,22 +11,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.szalik.logic.entertainment.enums.UserMode
+import com.szalik.logic.business.MeetingFlow
 import com.szalik.logic.entertainment.GameFlow
-import com.szalik.logic.entertainment.GameFlow.Companion.status
+import com.szalik.logic.entertainment.enums.MeetingMode
+import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.ui.theme.SzalikTheme
 
 @Composable
-fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
+fun LobbyScreen(navController: NavController, lobbyId: String, userMode: String, meetingMode: String) {
     val players = remember { GameFlow.listOfPlayers }
+    val users = remember {
+        MeetingFlow.listOfUsers
+    }
     val context = LocalContext.current
 
     Log.v("LOBBY_SCREEN", "Recomposing")
@@ -35,7 +37,7 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colors.background
         ) {
-            Column(Modifier.fillMaxSize(), Arrangement.SpaceBetween, Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxSize().padding(20.dp), Arrangement.SpaceBetween, Alignment.CenterHorizontally) {
                 Column(
                     modifier = Modifier
                         .fillMaxHeight(0.8f)
@@ -44,39 +46,63 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Kod gry: $lobbyId",
+                        text = if (meetingMode == MeetingMode.ENTERTAINMENT.name) "Kod gry: $lobbyId" else "Kod spotkania: $lobbyId",
                         textAlign = TextAlign.Center,
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    for(player in players) {
-                        Row(Modifier.fillMaxWidth()) {
-                            Text(
-                                text = player.name,
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                                fontSize = 20.sp
-                            )
+                    if (meetingMode == MeetingMode.ENTERTAINMENT.name) {
+                        for(player in players) {
+                            Row(Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = player.name,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 20.sp
+                                )
+                            }
+                        }
+                    } else {
+                        for(user in users) {
+                            Row(Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = user.name,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 20.sp
+                                )
+                            }
                         }
                     }
                 }
-                if (mode == UserMode.HOST.name) {
+                if (userMode == UserMode.HOST.name) {
                     Button(
                         onClick = {
-                            if (players.size < 6) {
-                                Toast.makeText(context, "Zbyt mało graczy!", Toast.LENGTH_LONG).show()
+                            if (meetingMode == MeetingMode.ENTERTAINMENT.name) {
+                                if (players.size < 6) {
+                                    Toast.makeText(context, "Zbyt mało graczy!", Toast.LENGTH_LONG).show()
+                                } else {
+                                    GameFlow.prepareGameByHost()
+                                    GameFlow.playerInGame = true
+                                    navController.navigate(Screen.CardScreen.route)
+                                }
                             } else {
-                                GameFlow.prepareGameByHost()
-                                GameFlow.playerInGame = true
-                                navController.navigate(Screen.CardScreen.route)
+                                //DO ZMIANY NA 2
+                                if (users.size < 1) {
+                                    Toast.makeText(context, "Potrzeba co najmniej 2 uczestników!", Toast.LENGTH_LONG).show()
+                                } else {
+                                    MeetingFlow.prepareMeetingByHost()
+                                    navController.navigate(Screen.PrepareMeetingScreen.route)
+                                }
                             }
+
                         },
                         Modifier.padding(10.dp)
                     ) {
                         Text(
-                            text = "Rozpocznij grę",
+                            text = if (meetingMode == MeetingMode.ENTERTAINMENT.name) "Rozpocznij grę" else "Rozpocznij spotkanie",
                             fontSize = 30.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colors.onPrimary,
@@ -84,20 +110,35 @@ fun LobbyScreen(navController: NavController, lobbyId: String, mode: String) {
                         )
                     }
                 } else {
-                    if (status == "STARTED" && !GameFlow.playerInGame) {
-                        GameFlow.playerInGame = true
-                        GameFlow.prepareGameByGuest()
-                        navController.navigate(Screen.CardScreen.route)
+                    if (meetingMode == MeetingMode.ENTERTAINMENT.name) {
+                        if (GameFlow.status == "STARTED" && !GameFlow.playerInGame) {
+                            GameFlow.playerInGame = true
+                            GameFlow.prepareGameByGuest()
+                            navController.navigate(Screen.CardScreen.route)
+                        } else {
+                            Text(
+                                text = "Oczekiwanie na rozpoczęcie gry",
+                                color = MaterialTheme.colors.onPrimary,
+                                fontSize = 24.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
                     } else {
-                        Text(
-                            text = "Oczekiwanie na rozpoczęcie gry",
-                            color = MaterialTheme.colors.onPrimary,
-                            fontSize = 24.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(10.dp)
-                        )
+                        if (MeetingFlow.status == "STARTED" && !MeetingFlow.userInMeeting) {
+                            MeetingFlow.userInMeeting = true
+                            MeetingFlow.startAsGuest()
+                            navController.navigate(Screen.MeetingScreen.route)
+                        } else {
+                            Text(
+                                text = "Oczekiwanie na rozpoczęcie spotkania",
+                                color = MaterialTheme.colors.onPrimary,
+                                fontSize = 22.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
                     }
-
                 }
             }
         }

@@ -24,7 +24,7 @@ fun Tile(
 ) {
     Card(
         modifier = Modifier
-            .width(175.dp)
+            .width(150.dp)
             .height(200.dp)
             .padding(10.dp)
             .clickable {

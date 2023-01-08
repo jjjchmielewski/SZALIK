@@ -20,7 +20,7 @@ fun MainScreen(navController: NavController) {
         Surface(
             modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background
         ) {
-            Column(Modifier.fillMaxSize(), Arrangement.Center) {
+            Column(Modifier.fillMaxSize().padding(20.dp), Arrangement.Center) {
                 Row(Modifier.fillMaxWidth(), Arrangement.Center){
                     Text(
                         text = "SZALiK",

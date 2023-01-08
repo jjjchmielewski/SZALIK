@@ -19,6 +19,7 @@ import com.google.firebase.database.ValueEventListener
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.Player
+import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.ui.theme.SzalikTheme
 import kotlin.random.Random
@@ -46,14 +47,14 @@ fun CreateGameScreen(navController: NavController) {
         if (exists == false && !transferred) {
             GameFlow.isHost = true
             val playerId = dbRef.push().key
-            val player = Player(name = "Jasio", id = playerId!!)
+            val player = Player(name = name, id = playerId!!)
             GameFlow.thisPlayerId = player.id
             GameFlow.setLobbyId(lobbyId)
 
             dbRef.child(lobbyId).child("state").setValue("WAIT")
             dbRef.child(lobbyId).child("players").child(playerId).setValue(player)
             transferred = true
-            navController.navigate(Screen.LobbyScreen.withArgs(lobbyId, UserMode.HOST.name))
+            navController.navigate(Screen.LobbyScreen.withArgs(lobbyId, UserMode.HOST.name, MeetingMode.ENTERTAINMENT.name))
         } else if (exists == true){
             lobbyId = getNewLobbyId()
             checkIfLobbyExists(lobbyId)
@@ -69,7 +70,7 @@ fun CreateGameScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colors.background
         ) {
-            Column(Modifier.fillMaxSize(), Arrangement.Center) {
+            Column(Modifier.fillMaxSize().padding(20.dp), Arrangement.Center) {
                 TextField(
                     value = name,
                     placeholder = {
@@ -88,6 +89,7 @@ fun CreateGameScreen(navController: NavController) {
 
                 Button(
                     onClick = {
+                        GameFlow.reset()
                         if (name != "") {
                             if (GameFlow.testMode) {
                                 GameFlow.isHost = true
@@ -98,7 +100,7 @@ fun CreateGameScreen(navController: NavController) {
                                 GameFlow.setLobbyId("123456")
                                 dbRef.child("123456").child("state").setValue("WAIT")
                                 dbRef.child("123456").child("players").child(playerId).setValue(player)
-                                navController.navigate(Screen.LobbyScreen.withArgs("123456", UserMode.HOST.name))
+                                navController.navigate(Screen.LobbyScreen.withArgs("123456", UserMode.HOST.name, MeetingMode.ENTERTAINMENT.name))
                             } else {
                                 checkIfLobbyExists(lobbyId)
                                 clicked = true
@@ -126,8 +128,7 @@ fun CreateGameScreen(navController: NavController) {
 }
 
 private fun getNewLobbyId(): String {
-    val random = Random.nextInt(100000, 999999).toString()
-    return random
+    return Random.nextInt(100000, 999999).toString()
 }
 
 private fun checkIfLobbyExists(id: String) {

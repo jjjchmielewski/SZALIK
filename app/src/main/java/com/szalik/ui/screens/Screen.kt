@@ -10,6 +10,8 @@ sealed class Screen(val route: String) {
     object JoinMeetingScreen : Screen("join_meeting_screen")
     object LobbyScreen : Screen("lobby_screen")
     object CardScreen : Screen("card_screen")
+    object PrepareMeetingScreen : Screen("prepare_meeting_screen")
+    object MeetingScreen : Screen("meeting_screen")
 
     fun withArgs(vararg args: String): String {
         return buildString {

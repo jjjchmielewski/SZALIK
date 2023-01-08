@@ -62,6 +62,45 @@ class GameFlow {
         private var lobbyId: String? = null
         private var dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
 
+        fun reset() {
+            isHost = false
+            isNight = true
+            actionTakeover = null
+            listOfPlayers.clear()
+            awakenPlayersIds.clear()
+            thisPlayerId = null
+            playerInGame = false
+            winners = null
+            ttsMessage = null
+            status = ""
+            currentPlayerId = ""
+            chosenPlayerId = ""
+            duelingPlayerId = ""
+            dueledPlayerId = ""
+            votingResult = null
+            playerToSearchId = ""
+            searched = false
+            searchCounter = 0
+            aliensSignalCounter = 0
+            showActionQuestion = false
+            showChoiceList = false
+            showIdentity = false
+            showTotemLocation = false
+            showConfirmButton = false
+            showDuelChoiceList = false
+            showSearchChoiceList = false
+            showVoting = false
+            showEliminated = false
+            dayNumber = 0
+            eliminatedPlayers.clear()
+            sharedIdentity = null
+            playerWithTotemId = ""
+            indiansKillCounter = 9
+            lastProtectedPlayerId = ""
+            indiansTotemTakeover = false
+            rolesQueue.clear()
+            lobbyId = null
+        }
 
         fun prepareGameByHost() {
             giveCards(listOfPlayers.size)
@@ -795,13 +834,6 @@ class GameFlow {
 
                 }
             })
-        }
-
-        fun reset() {
-            listOfPlayers.clear()
-            thisPlayerId = null
-            chosenPlayerId = ""
-            lobbyId = null
         }
     }
 }

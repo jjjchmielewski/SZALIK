@@ -37,13 +37,17 @@ fun Navigation() {
             JoinMeetingScreen(navController = navController)
         }
         composable(
-            route = Screen.LobbyScreen.route + "/{lobbyId}/{mode}",
+            route = Screen.LobbyScreen.route + "/{lobbyId}/{userMode}/{meetingMode}",
             arguments = listOf(
                 navArgument("lobbyId") {
                     type = NavType.StringType
                     nullable = false
                 },
-                navArgument("mode") {
+                navArgument("userMode") {
+                    type = NavType.StringType
+                    nullable = false
+                },
+                navArgument("meetingMode") {
                     type = NavType.StringType
                     nullable = false
                 }
@@ -52,11 +56,18 @@ fun Navigation() {
             LobbyScreen(
                 navController = navController,
                 lobbyId = it.arguments?.getString("lobbyId")!!,
-                mode = it.arguments?.getString("mode")!!
+                userMode = it.arguments?.getString("userMode")!!,
+                meetingMode = it.arguments?.getString("meetingMode")!!
             )
         }
         composable(route = Screen.CardScreen.route) {
             CardScreen()
+        }
+        composable(route = Screen.PrepareMeetingScreen.route) {
+            PrepareMeetingScreen(navController = navController)
+        }
+        composable(route = Screen.MeetingScreen.route) {
+            MeetingScreen()
         }
     }
 }

@@ -22,6 +22,7 @@ import com.google.firebase.database.ValueEventListener
 import com.szalik.logic.common.database.DatabaseConnection
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.Player
+import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.ui.theme.SzalikTheme
 
@@ -73,7 +74,7 @@ fun JoinGameScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colors.background
         ) {
-            Column(Modifier.fillMaxSize(), Arrangement.Center) {
+            Column(Modifier.fillMaxSize().padding(20.dp), Arrangement.Center) {
                 TextField(
                     value = gameId,
                     placeholder = {
@@ -108,6 +109,7 @@ fun JoinGameScreen(navController: NavController) {
 
                 Button(
                     onClick = {
+                        GameFlow.reset()
                         if (gameId != "" && gameId.length == 6) {
                             if (name != "") {
                                 loop@ while (true) {
@@ -126,7 +128,8 @@ fun JoinGameScreen(navController: NavController) {
                                                 navController.navigate(
                                                     Screen.LobbyScreen.withArgs(
                                                         gameId,
-                                                        UserMode.GUEST.name
+                                                        UserMode.GUEST.name,
+                                                        MeetingMode.ENTERTAINMENT.name
                                                     )
                                                 )
                                                 break@loop

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.szalik.R
@@ -26,7 +27,7 @@ fun BusinessScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colors.background
         ) {
-            Column(Modifier.fillMaxSize(), Arrangement.Center) {
+            Column(Modifier.fillMaxSize().padding(20.dp), Arrangement.Center) {
                 Spacer(modifier = Modifier.fillMaxHeight(0.1f))
 
                 Image(

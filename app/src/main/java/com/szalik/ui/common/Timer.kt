@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import com.szalik.logic.business.MeetingFlow
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.enums.MeetingMode
 import kotlinx.coroutines.delay
@@ -43,35 +44,36 @@ fun Timer(totalTime: Long, mode: MeetingMode) {
         }
     } else {
         if (currentTime > 0) {
-            val hours = (currentTime / 3600000).toInt()
-            val minutes = ((currentTime - hours * 3600000) / 60000).toInt()
+            val hours = currentTime / 3600000
+            val minutes = (currentTime - hours * 3600000) / 60000
             val seconds = ((currentTime - hours * 3600000) - minutes * 60000) / 1000
 
             var text = ""
 
             if (hours > 0)
                 text += "0$hours:"
-            if (minutes in 1..9)
+            if (minutes in 0..9)
                 text += "0$minutes:"
             else if (minutes > 9)
                 text += "$minutes:"
-            if (seconds in 1..9)
+            if (seconds in 0..9)
                 text += "0$seconds"
             else if (seconds > 9)
                 text += "$seconds"
-            else
-                text += seconds
 
             Text(
                 text = text,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colors.primaryVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (currentTime == 60000L)
+                MeetingFlow.ttsMessage = "Minuta do końca czasu!"
         } else {
-            //koniec spotkania
+            MeetingFlow.nextUser()
         }
     }
 

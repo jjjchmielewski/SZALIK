@@ -5,12 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.chargemap.compose.numberpicker.FullHours
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.szalik.logic.common.database.DatabaseConnection
-import com.szalik.logic.entertainment.GameFlow.Companion.status
 
 class MeetingFlow {
     companion object {
@@ -21,9 +19,12 @@ class MeetingFlow {
         var status by mutableStateOf("")
         var raisedHandsList = mutableStateListOf<User>()
         var isHost = false
+        var firstUserId = ""
 
         var time by mutableStateOf(0L)
         var equalTime by mutableStateOf(false)
+        var ttsMessage by mutableStateOf<String?>(null)
+        var endOfMeeting by mutableStateOf(false)
 
         var userInMeeting = false
         private var meetingId: String? = null
@@ -36,17 +37,35 @@ class MeetingFlow {
             return true
         }
 
+        fun reset() {
+            listOfUsers.clear()
+            thisUserId = null
+            currentUserId = ""
+            nextUserId = ""
+            status = ""
+            raisedHandsList.clear()
+            isHost = false
+            firstUserId = ""
+            time = 0L
+            equalTime = false
+            ttsMessage = ""
+            endOfMeeting = false
+            userInMeeting = false
+            meetingId = null
+        }
+
         fun prepareMeetingByHost() {
             dbRef.child(meetingId!!).child("state").setValue("PREPARING")
         }
 
         fun start() {
-            currentUserId = listOfUsers.first().id
+            firstUserId = listOfUsers.first().id
             dbRef.child(meetingId!!).child("currentUser").setValue(listOfUsers.first().id)
             dbRef.child(meetingId!!).child("nextUser").setValue(listOfUsers[1].id)
             dbRef.child(meetingId!!).child("time").setValue(time)
             dbRef.child(meetingId!!).child("equalTime").setValue(equalTime)
             dbRef.child(meetingId!!).child("state").setValue("STARTED")
+            checkEndOfMeeting()
             checkTime()
             checkEqualTime()
             checkNextUser()
@@ -55,6 +74,7 @@ class MeetingFlow {
         }
 
         fun startAsGuest() {
+            checkEndOfMeeting()
             checkTime()
             checkEqualTime()
             checkNextUser()
@@ -72,10 +92,12 @@ class MeetingFlow {
         }
 
         fun nextUser() {
-            dbRef.child(meetingId!!).child("currentUser").setValue(nextUserId)
-        }
-
-        fun reset() {
+            if (nextUserId != "") {
+                dbRef.child(meetingId!!).child("raisedHands").setValue(null)
+                dbRef.child(meetingId!!).child("currentUser").setValue(nextUserId)
+            } else {
+                dbRef.child(meetingId!!).child("endOfMeeting").setValue(true)
+            }
 
         }
 
@@ -113,11 +135,18 @@ class MeetingFlow {
                     Log.i("MEETING_FLOW", "Current user is ${snapshot.value}!")
                     if (snapshot.value != null && snapshot.value != currentUserId) {
                         currentUserId = snapshot.value as String
-                        if (isHost) {
+                        if (isHost && currentUserId != firstUserId) {
                             val first = listOfUsers.first()
                             listOfUsers.removeFirst()
                             listOfUsers.add(first)
-                            dbRef.child(meetingId!!).child("nextUser").setValue(listOfUsers[1].id)
+                            if (firstUserId == listOfUsers[1].id) {
+                                dbRef.child(meetingId!!).child("nextUser").setValue("")
+                            } else {
+                                dbRef.child(meetingId!!).child("nextUser").setValue(listOfUsers[1].id)
+                            }
+                        }
+                        if (currentUserId == thisUserId) {
+                            ttsMessage = "Następny mówca - ${listOfUsers.find { it.id == thisUserId }?.name}"
                         }
                     }
                 }
@@ -178,6 +207,20 @@ class MeetingFlow {
                     for (item in snapshot.children) {
                         raisedHandsList.add(item.getValue(User::class.java)!!)
                     }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+        }
+
+        private fun checkEndOfMeeting() {
+            dbRef.child(meetingId!!).child("endOfMeeting").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.i("MEETING_FLOW", "Is meeting ended: ${snapshot.value}!")
+                    if (snapshot.value != null && snapshot.value != "")
+                        endOfMeeting = snapshot.value as Boolean
                 }
 
                 override fun onCancelled(error: DatabaseError) {

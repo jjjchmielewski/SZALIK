@@ -35,19 +35,11 @@ fun CardScreen() {
     val context = LocalContext.current
     val dbRef = DatabaseConnection.getDatabase().getReference("lobbies")
 
-    var init by remember {
-        mutableStateOf(false)
-    }
-
     var showCard by remember {
         mutableStateOf(false)
     }
 
     Log.i("CARD_SCREEN", "Recomposing...")
-    if (!init) {
-        TTSEngine.getTTS(context)
-        init = true
-    }
 
     if (GameFlow.ttsMessage != null) {
         TTSEngine.getTTS(context).speak(GameFlow.ttsMessage, TextToSpeech.QUEUE_FLUSH, null, "")

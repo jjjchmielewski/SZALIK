@@ -380,7 +380,6 @@ class GameFlow {
             Log.i(
                 "GAME_FLOW", "Handling choice for chosen: ${listOfPlayers.find { it.id == chosenPlayerId }?.name}"
             )
-            var voiceMessage = ""
             when (if (actionTakeover != null) actionTakeover else listOfPlayers.find { it.id == currentPlayerId }?.card?.role) {
                 Role.COQUETTE -> {
                     dbRef.child(lobbyId!!).child("tts").setValue("Kokietka zapoznaje się z wybraną osobą i dowiaduje się jaką ma rolę.")
@@ -634,11 +633,11 @@ class GameFlow {
             else {
                 eliminatedPlayers.add(preyId)
                 listOfPlayers.find { it.id == preyId }?.eliminated = true
-                if (chosenPlayer?.card?.hasTotem == true) {
+                voiceMessage = if (chosenPlayer.card?.hasTotem == true) {
                     passTotemTo(predatorId)
-                    voiceMessage = "${predator?.card?.role?.polishName} zabija wybraną osobę i przejmuje posążek!"
+                    "${predator?.card?.role?.polishName} zabija wybraną osobę i przejmuje posążek!"
                 } else {
-                    voiceMessage = "${predator?.card?.role?.polishName} zabija wybraną osobę."
+                    "${predator?.card?.role?.polishName} zabija wybraną osobę."
                 }
                 removeBlackmailerSeducerEffect(chosenPlayer.card?.role!!)
                 showEliminated = true

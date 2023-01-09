@@ -7,8 +7,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.szalik.logic.business.MeetingFlow
+import com.szalik.logic.common.TTSEngine
 import com.szalik.logic.entertainment.GameFlow
 import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.entertainment.enums.UserMode
@@ -30,6 +30,15 @@ fun LobbyScreen(navController: NavController, lobbyId: String, userMode: String,
         MeetingFlow.listOfUsers
     }
     val context = LocalContext.current
+
+    var init by remember {
+        mutableStateOf(false)
+    }
+
+    if (!init) {
+        TTSEngine.getTTS(context)
+        init = true
+    }
 
     Log.v("LOBBY_SCREEN", "Recomposing")
     SzalikTheme {
@@ -89,8 +98,7 @@ fun LobbyScreen(navController: NavController, lobbyId: String, userMode: String,
                                     navController.navigate(Screen.CardScreen.route)
                                 }
                             } else {
-                                //DO ZMIANY NA 2
-                                if (users.size < 1) {
+                                if (users.size < 2) {
                                     Toast.makeText(context, "Potrzeba co najmniej 2 uczestników!", Toast.LENGTH_LONG).show()
                                 } else {
                                     MeetingFlow.prepareMeetingByHost()

@@ -89,6 +89,7 @@ fun CreateMeetingScreen(navController: NavController) {
 
                 Button(
                     onClick = {
+                        MeetingFlow.reset()
                         if (name != "") {
                             checkIfLobbyExists(lobbyId)
                             clicked = true

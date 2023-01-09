@@ -19,8 +19,6 @@ import com.google.firebase.database.ValueEventListener
 import com.szalik.logic.business.MeetingFlow
 import com.szalik.logic.business.User
 import com.szalik.logic.common.database.DatabaseConnection
-import com.szalik.logic.entertainment.GameFlow
-import com.szalik.logic.entertainment.Player
 import com.szalik.logic.entertainment.enums.MeetingMode
 import com.szalik.logic.entertainment.enums.UserMode
 import com.szalik.ui.theme.SzalikTheme
@@ -104,7 +102,7 @@ fun JoinMeetingScreen(navController: NavController) {
 
                 Button(
                     onClick = {
-
+                        MeetingFlow.reset()
                         if (meetingId != "" && meetingId.length == 6) {
                             if (name != "") {
                                 loop@ while (true) {

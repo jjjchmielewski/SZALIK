@@ -11,7 +11,7 @@ class TTSEngine {
         private fun initTTS(context: Context) {
             ttsEngine = TextToSpeech(context) {
                 if (it == TextToSpeech.SUCCESS) {
-                    ttsEngine!!.setLanguage(Locale("pl_PL"))
+                    ttsEngine!!.language = Locale("pl_PL")
                 }
             }
         }

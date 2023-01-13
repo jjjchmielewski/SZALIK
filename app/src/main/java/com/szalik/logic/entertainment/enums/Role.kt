@@ -68,7 +68,7 @@ enum class Role(
     ),
     SEDUCER(
         "Uwodziciel",
-        "Uwodziciel dzięki swojemu urokowi osobistemu potrafi sprawić, że osoba którą sobie wybierze zerowej nocy przyzna mu zawsze rację i niw ystąpi w żaden sposób przeciwko niemu",
+        "Uwodziciel dzięki swojemu urokowi osobistemu potrafi sprawić, że osoba którą sobie wybierze zerowej nocy przyzna mu zawsze rację i nie wystąpi w żaden sposób przeciwko niemu",
         999,
         Fraction.CITY
     ),
